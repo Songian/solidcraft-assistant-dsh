@@ -25,7 +25,7 @@
 ## 安装
 
 ```sh
-git clone https://github.com/songian/solidcraft-assistant.git
+git clone https://github.com/Songian/solidcraft-assistant-dsh.git
 cd solidcraft-assistant
 ```
 

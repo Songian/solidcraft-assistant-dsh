@@ -24,26 +24,37 @@
 
 ## 安装
 
-```sh
-git clone https://github.com/Songian/solidcraft-assistant-dsh.git
-cd solidcraft-assistant
-```
+不需要先 clone，DSH 可以直接从 GitHub 安装这个 bundle。
 
-默认使用 `--allow-any-path`，开箱即用：助手可以读写应用能访问的任意路径，`designs/`、`renders/` 建在当前工作目录即可。要收紧权限，把 `cordis.patch.yml` 里的 `--allow-any-path` 换成 `--allow-path <目录>`，并让 `designs/`、`renders/` 位于该目录内。
-
-然后在 DSH 里安装 bundle。推荐用 Creator 预设：
+### 用 Creator 预设安装（推荐）
 
 1. 在 DSH Web 新建任务，Agent 预设选 **Creator**；
-2. 对它说：`安装 bundle：plugin_manager install_bundle <仓库绝对路径>/solidcraft-assistant`；
-3. 安装完成后，新任务里就能选 **“Solidcraft 建模助手”**。
+2. 对它说：
 
-手动方式（需要能编辑 `$DSH_HOME/profiles/<profile>/package.json`）：
+   ```text
+   安装 bundle：plugin_manager install_bundle github:Songian/solidcraft-assistant-dsh#path:/solidcraft-assistant
+   ```
+
+3. 安装完成后，新建任务时就能选 **“Solidcraft 建模助手”**。
+
+### 手动安装
 
 ```sh
-dsh plugin --profile web add /absolute/path/to/solidcraft-assistant
+dsh plugin --profile web add "github:Songian/solidcraft-assistant-dsh#path:/solidcraft-assistant"
 ```
 
 再把 `@local/solidcraft-assistant` 加进该 profile `package.json` 的 `dsh.profile.bundles`，重启 `dsh web`。如果 pnpm 报 `ERR_PNPM_ADDING_TO_ROOT`，在 profile 目录新建 `.npmrc` 写入 `ignore-workspace-root-check=true`。
+
+### 本地开发
+
+```sh
+git clone https://github.com/Songian/solidcraft-assistant-dsh.git
+cd solidcraft-assistant-dsh
+```
+
+修改 `solidcraft-assistant/` 后，用同样的 `plugin_manager install_bundle` 安装本地目录即可（本地目录安装会 link，不会复制）。
+
+权限：默认使用 `--allow-any-path`，助手可以读写应用能访问的任意路径，`designs/`、`renders/` 建在当前工作目录即可。要收紧权限，把 `cordis.patch.yml` 里的 `--allow-any-path` 换成 `--allow-path <目录>`，并让 `designs/`、`renders/` 位于该目录内。
 
 ## 使用
 

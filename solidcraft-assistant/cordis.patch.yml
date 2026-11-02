@@ -1,0 +1,101 @@
+# SolidCraft 参数化建模助手：一个可选择的 Agent 预设。
+#
+# 预设内挂载 Solidcraft 的 MCP 服务器（stdio，自动桥接正在运行的桌面应用，
+# 没有应用时进入 headless 会话），并只在该预设的作用域内注册工具，
+# 因此其它会话不会看到 solidcraft 工具。
+- insert:
+    - id: preset-solidcraft
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: solidcraft
+        name: Solidcraft 建模助手
+        description: 通过对话驱动 Solidcraft 做参数化建模、验证尺寸、出图，并按规范整理 bug 报告。
+        order: 10
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |-
+                你是 SolidCraft 参数化建模助手，用中文与用户对话。
+
+                你的双手是 solidcraft MCP 工具（名称形如 mcp__solidcraft__batch）。任何建模动作都必须真正调用工具执行，绝不能只在聊天里写出命令让用户自己跑。没有调用工具就没有完成工作。
+
+                开始任何建模任务前，先加载 solidcraft-assistant 技能，并按它要求的顺序读取 SolidCraft 自带的 skill_reference 文档；那是当前版本命令形状和已知陷阱的权威来源，不要凭记忆写命令。
+
+                工作方式：先想清楚参数、坐标、每步预期体积与包围盒，再用少量 batch 批量执行；每阶段用 measure 对照手算值验证。只有数字对得上才算完成。切不到材料的 cut 也会返回成功，不要相信 ok 字段。
+
+                交付时给中文结论（外形尺寸、体积、关键参数）、嵌入截图，并把设计保存到 designs/、图片保存到 renders/。除非用户另有要求，不要粘贴大段 JSON。
+
+                用户要求打开或刷新 SolidCraft 窗口预览时，按技能里的“打开 GUI 预览”流程执行：能桥接就让建模实时显示在窗口里；不能桥接就保存当前设计，再更新已有的 SolidCraft 窗口。同一个模型修改后只更新它原来的 tab，不要新建 tab；只有新模型才新开 tab。系统中已经有 SolidCraft 实例时，绝不要关闭、杀死或重启它（不要 pkill、job_kill 或重新 launch）。启动窗口只用 scripts/solidcraft_gui.py（它用 systemd 常驻），不要用 bash 直接运行 solidcraft；否则窗口会被回收，看起来像反复关闭重开。没有显示环境时如实说明并改用聊天里的截图。
+
+                用户报告 Solidcraft 崩溃、报错、形状或数值不对时，按 references/bug-report.md 的规范做最小复现，先给用户看报告；未经用户明确同意，绝不提交 issue，也绝不上传用户的设计、截图或文件内容。
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          - id: mcp-solidcraft
+            name: '@deepseek-ai/dsh-mcp-client'
+            config:
+              serverName: solidcraft
+              transport: stdio
+              command: solidcraft-cli
+              args:
+                - mcp
+                - --param-check
+                - warn
+                # CHANGE ME: the folder the assistant may read and write.
+                # designs/ and renders/ live inside it; the MCP server refuses
+                # files outside --allow-path.
+                - --allow-path
+                - /absolute/path/to/your/solidcraft-workspace
+              toolCallTimeoutMs: 330000
+              failOnStartupError: true
+          - id: skill-filesystem
+            name: '@deepseek-ai/dsh-skill-filesystem'
+            config:
+              customSkillDirs:
+                - !!js process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('@local/solidcraft-assistant/package.json')), 'skills')
+          - id: tool-skill
+            name: '@deepseek-ai/dsh-tool-skill'
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+          - id: tool-fs-search
+            name: '@deepseek-ai/dsh-tool-fs-search'
+            config:
+              sampleOverCapGlobResults: false
+          - id: tool-bash
+            name: '@deepseek-ai/dsh-tool-bash'
+            disabled: !!js process.platform === 'win32'
+          - id: tool-pwsh
+            name: '@deepseek-ai/dsh-tool-pwsh'
+            disabled: !!js process.platform !== 'win32'
+          - id: tool-jobs
+            name: '@deepseek-ai/dsh-tool-jobs'
+          - id: tool-todo
+            name: '@deepseek-ai/dsh-tool-todo'
+            config:
+              allowParallelInProgress: true
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: tool-web
+            name: '@deepseek-ai/dsh-tool-web'
+            config:
+              fetch: true
+              searchTimeoutMs: 60000
+          - id: present
+            name: '@deepseek-ai/dsh-tool-present'
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024

@@ -1,0 +1,151 @@
+# SolidCraft DSH 建模助手
+
+一个 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）Agent 预设：通过中文对话驱动 [SolidCraft](https://docs.solidcraft.io/) 做参数化建模——建参数、画草图、做特征、验证尺寸、出图，并按 SolidCraft 官方规范整理 bug 报告。
+
+![GUI 预览](renders/gui_window.png)
+
+## 特性
+
+- **对话即建模**：接入 SolidCraft 的 [MCP 服务器](https://docs.solidcraft.io/guide/mcp.html)，21 个原生工具（`batch`、`execute`、`measure`、`body_topology`、`check_parameters`、`screenshot`、`export`、`save`、`skill_reference`…）。
+- **参数化优先**：所有尺寸/位置由用户参数驱动，草图要求全约束，特征命名，先外后内。
+- **数字验证**：每阶段用 `measure` 对照手算体积/包围盒；`ok: true` 不算成功（切不到材料的 cut 也会成功）。
+- **专属技能**：`solidcraft-assistant` 技能覆盖会话流程、参数化规则、验证标准、交付格式和 GUI 预览。
+- **Bug 报告规范**：按 SolidCraft 官方的 `solidcraft-reporting` 流程：全新设计最小复现 → 缩小脚本 → 数字核对 → 搜索已有 issue → 用户同意后才提交。
+- **GUI 预览**：自动发现并复用已运行的 SolidCraft 实例；同一模型修改后**更新原 tab**，只有新模型才新开 tab；绝不反复关闭/重启窗口。
+- **作用域隔离**：MCP 工具只在“Solidcraft 建模助手”预设内注册，其它会话看不到。
+
+## 环境要求
+
+- SolidCraft **0.29+**（`solidcraft`、`solidcraft-cli` 在 `PATH` 中）
+- DSH（测试于 `0.2.1-rc.5`）
+- Python **3.10+**（预览脚本、验证脚本）
+- 桌面环境；GUI 预览在 Linux + systemd user manager 下最稳（无 systemd 时脚本会退回普通进程启动）
+- 操作系统：Linux（已在 X11 下实测）；macOS/Windows 可建模与出图，GUI 预览脚本中的 systemd 路径不适用
+
+## 安装
+
+```sh
+git clone https://github.com/songian/solidcraft-assistant.git
+cd solidcraft-assistant
+```
+
+编辑 `solidcraft-assistant/cordis.patch.yml`，把 `--allow-path` 改成你的工作目录（助手只能在这个目录内读写设计、截图）：
+
+```yaml
+                - --allow-path
+                - /absolute/path/to/your/solidcraft-workspace
+```
+
+`designs/`、`renders/` 要建在这个目录下。
+
+然后在 DSH 里安装 bundle。推荐用 Creator 预设：
+
+1. 在 DSH Web 新建任务，Agent 预设选 **Creator**；
+2. 对它说：`安装 bundle：plugin_manager install_bundle <仓库绝对路径>/solidcraft-assistant`；
+3. 安装完成后，新任务里就能选 **“Solidcraft 建模助手”**。
+
+手动方式（需要能编辑 `$DSH_HOME/profiles/<profile>/package.json`）：
+
+```sh
+dsh plugin --profile web add /absolute/path/to/solidcraft-assistant
+```
+
+再把 `@local/solidcraft-assistant` 加进该 profile `package.json` 的 `dsh.profile.bundles`，重启 `dsh web`。如果 pnpm 报 `ERR_PNPM_ADDING_TO_ROOT`，在 profile 目录新建 `.npmrc` 写入 `ignore-workspace-root-check=true`。
+
+## 使用
+
+新建任务，预设选 **“Solidcraft 建模助手”**，然后直接说需求：
+
+- “做一块 120×80×6 的安装板，四角 R5，四角各一个 M3 沉头孔，孔边距 8 mm，做成可改尺寸的。”
+- “把宽度改成 100，孔边距保持 8，看看体积变化。”
+- “给这个外壳加四个 M3 热熔铜螺母柱，柱高 8，壁厚 2。”
+- “打开 SolidCraft 看看当前模型。”
+- “把当前模型在 SolidCraft 里更新一下。”
+
+助手会先给参数与预期体积，再分阶段 `batch` 建模，用 `measure` 验证，最后给结论和截图。设计与图片默认存到工作目录的 `designs/`、`renders/`。
+
+### 后端行为
+
+- SolidCraft 桌面应用**已启动**：MCP 自动桥接，建模实时显示。
+- 应用**未启动**：headless 建模，照常测量、出图。
+- headless 会话**还没建过特征**时启动应用，下一次调用会自动桥接；一旦建过特征就固定留在 headless。
+
+## GUI 预览
+
+```sh
+python3 scripts/solidcraft_gui.py status          # running/process/unit、端口、标签页数
+python3 scripts/solidcraft_gui.py open designs/plate.sc
+python3 scripts/solidcraft_gui.py push designs/plate.sc          # 更新原 tab；没有才新开
+python3 scripts/solidcraft_gui.py push designs/plate.sc --reframe  # 只调视角
+python3 scripts/solidcraft_gui.py screenshot renders/gui_window.png
+```
+
+设计要点：
+
+- `open` 只在没有实例时启动，优先用 transient systemd user unit（`solidcraft-preview`）让窗口跨命令常驻；已有实例直接复用，绝不重启。
+- `push` 对**同一个模型**会关闭它旧的 tab 并立即打开更新后的文件，标签页数量不变；对**新模型**才新开 tab。SolidCraft 没有 reload 命令，这是保持“原地更新”的可靠方式。
+- 目标 tab 有未保存修改时 `push` 拒绝，避免丢用户改动。
+- 控制通道关着（`process: true`、`running: false`）时不会启动第二个实例，而是提示在 Preferences → Assistant 打开 “Let AI agents connect”。
+
+## 架构
+
+```text
+DSH Agent 预设 "solidcraft"
+├── persona            中文建模助手行为约束
+├── mcp-solidcraft     stdio 连接 solidcraft-cli mcp（工具名 mcp__solidcraft__*）
+├── skill-filesystem   挂载 skills/solidcraft-assistant
+├── tool-skill         按需加载技能
+├── tool-fs / bash / jobs / todo / ask-user / web / present
+└── compaction         长会话压缩 + 工具结果裁剪
+```
+
+- 预设通过 `@deepseek-ai/dsh-agent-preset` 声明，MCP 客户端只在预设作用域注册工具。
+- 技能（`SKILL.md` + `references/`）是模型按需加载的流程说明，避免把大量命令写死进 prompt。
+- 命令形状与陷阱以 SolidCraft 自带的 `skill_reference` 为准，随版本更新。
+
+## 验证
+
+```sh
+python3 scripts/verify_mcp.py
+```
+
+会新建一个参数化板件、验证体积、改参数、出图并保存：
+
+```text
+connected: solidcraft 0.29.0
+plate volume: 23335.2 mm3 (expected 23335.2)
+after L=120: 35335.2 mm3 (expected 35335.2)
+design: designs/plate.sc
+OK
+```
+
+## 配置
+
+| 位置 | 作用 |
+|---|---|
+| `cordis.patch.yml` → `args` 的 `--allow-path` | MCP 可读写的目录，必须改成你的工作目录 |
+| `serverName` | 工具名前缀，默认 `solidcraft` |
+| `toolCallTimeoutMs` | 单次 MCP 调用超时，默认 330000（长 fillet/批量建模） |
+| `command` | `solidcraft-cli`，也可写绝对路径 |
+| `SKILL.md` | 建模/验证/交付/GUI 预览规则；可按团队习惯修改 |
+
+## 故障排查
+
+- **新任务看不到预设**：刷新页面；确认 bundle 已安装且 profile 的 `dsh.profile.bundles` 含 `@local/solidcraft-assistant`。
+- **没有 `mcp__solidcraft__*` 工具**：确认 `solidcraft-cli` 在启动 DSH 的 `PATH` 中；查看 DSH 日志里 MCP 启动错误；`--allow-path` 目录必须存在。
+- **保存被拒**：路径在 `--allow-path` 之外；改成工作目录内的绝对路径。
+- **GUI 打不开**：检查 `DISPLAY`；读 `renders/solidcraft-gui.log`；无显示环境时用聊天里的 `screenshot`。
+- **窗口反复关闭重开**：不要用 bash 直接跑 `solidcraft`，用 `scripts/solidcraft_gui.py open`（systemd 常驻）。
+- **标签页越来越多**：只在切换不同模型时才会新开；同一模型 `push` 会原地更新。
+
+## 已知限制
+
+- 同一预设的所有会话共享一个 MCP 连接与 headless 设计，不要并发修改同一模型。
+- headless 会话在已有特征后无法中途桥接到 GUI，只能用 `push` 展示已保存快照。
+- 更新同一模型的 tab 会重置该 tab 的相机/选中状态（控制通道无 reload）。
+- GUI 预览的持久化依赖 systemd user manager；其它平台退回普通进程，可能被回收。
+- 本项目不是 SolidCraft 官方项目；SolidCraft 是独立的开源 CAD 项目。
+
+## 许可
+
+MIT，见 [LICENSE](LICENSE)。SolidCraft 本身以 MIT OR Apache-2.0 发布。

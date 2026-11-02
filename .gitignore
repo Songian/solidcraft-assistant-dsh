@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+renders/solidcraft-gui.log
+designs/.~*.lock
+.DS_Store

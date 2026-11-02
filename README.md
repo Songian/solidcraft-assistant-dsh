@@ -6,7 +6,7 @@
 
 ## 特性
 
-- **对话即建模**：接入 SolidCraft 的 [MCP 服务器](https://docs.solidcraft.io/guide/mcp.html)，21 个原生工具（`batch`、`execute`、`measure`、`body_topology`、`check_parameters`、`screenshot`、`export`、`save`、`skill_reference`…）。
+- **对话即建模**：接入 SolidCraft 的 [MCP 服务器](https://docs.solidcraft.io/guide/mcp.html)，20 个原生工具（`batch`、`execute`、`measure`、`body_topology`、`check_parameters`、`screenshot`、`export`、`save`、`skill_reference`…）。
 - **参数化优先**：所有尺寸/位置由用户参数驱动，草图要求全约束，特征命名，先外后内。
 - **数字验证**：每阶段用 `measure` 对照手算体积/包围盒；`ok: true` 不算成功（切不到材料的 cut 也会成功）。
 - **专属技能**：`solidcraft-assistant` 技能覆盖会话流程、参数化规则、验证标准、交付格式和 GUI 预览。

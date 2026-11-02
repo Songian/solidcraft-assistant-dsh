@@ -1,0 +1,25 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile scripts
+        run: python3 -m py_compile scripts/*.py
+      - name: Validate JSON resources
+        run: |
+          python3 - <<'PY'
+          import json
+          import pathlib
+          for path in pathlib.Path("solidcraft-assistant").rglob("*.json"):
+              json.loads(path.read_text(encoding="utf-8"))
+              print("ok", path)
+          PY

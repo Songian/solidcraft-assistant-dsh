@@ -29,14 +29,7 @@ git clone https://github.com/Songian/solidcraft-assistant-dsh.git
 cd solidcraft-assistant
 ```
 
-编辑 `solidcraft-assistant/cordis.patch.yml`，把 `--allow-path` 改成你的工作目录（助手只能在这个目录内读写设计、截图）：
-
-```yaml
-                - --allow-path
-                - /absolute/path/to/your/solidcraft-workspace
-```
-
-`designs/`、`renders/` 要建在这个目录下。
+默认使用 `--allow-any-path`，开箱即用：助手可以读写应用能访问的任意路径，`designs/`、`renders/` 建在当前工作目录即可。要收紧权限，把 `cordis.patch.yml` 里的 `--allow-any-path` 换成 `--allow-path <目录>`，并让 `designs/`、`renders/` 位于该目录内。
 
 然后在 DSH 里安装 bundle。推荐用 Creator 预设：
 
@@ -123,7 +116,7 @@ OK
 
 | 位置 | 作用 |
 |---|---|
-| `cordis.patch.yml` → `args` 的 `--allow-path` | MCP 可读写的目录，必须改成你的工作目录 |
+| `cordis.patch.yml` → `args` 的 `--allow-any-path` | 默认不限制路径；可换成 `--allow-path <目录>` 收紧 |
 | `serverName` | 工具名前缀，默认 `solidcraft` |
 | `toolCallTimeoutMs` | 单次 MCP 调用超时，默认 330000（长 fillet/批量建模） |
 | `command` | `solidcraft-cli`，也可写绝对路径 |
@@ -132,8 +125,8 @@ OK
 ## 故障排查
 
 - **新任务看不到预设**：刷新页面；确认 bundle 已安装且 profile 的 `dsh.profile.bundles` 含 `@local/solidcraft-assistant`。
-- **没有 `mcp__solidcraft__*` 工具**：确认 `solidcraft-cli` 在启动 DSH 的 `PATH` 中；查看 DSH 日志里 MCP 启动错误；`--allow-path` 目录必须存在。
-- **保存被拒**：路径在 `--allow-path` 之外；改成工作目录内的绝对路径。
+- **没有 `mcp__solidcraft__*` 工具**：确认 `solidcraft-cli` 在启动 DSH 的 `PATH` 中；查看 DSH 日志里 MCP 启动错误；如果改用了 `--allow-path`，目录必须存在。
+- **保存被拒**：只有收紧了 `--allow-path` 才会发生；把路径放进该目录，或改回 `--allow-any-path`。
 - **GUI 打不开**：检查 `DISPLAY`；读 `renders/solidcraft-gui.log`；无显示环境时用聊天里的 `screenshot`。
 - **窗口反复关闭重开**：不要用 bash 直接跑 `solidcraft`，用 `scripts/solidcraft_gui.py open`（systemd 常驻）。
 - **标签页越来越多**：只在切换不同模型时才会新开；同一模型 `push` 会原地更新。

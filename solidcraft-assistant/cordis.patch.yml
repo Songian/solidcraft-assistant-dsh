@@ -41,11 +41,10 @@
                 - mcp
                 - --param-check
                 - warn
-                # CHANGE ME: the folder the assistant may read and write.
-                # designs/ and renders/ live inside it; the MCP server refuses
-                # files outside --allow-path.
-                - --allow-path
-                - /absolute/path/to/your/solidcraft-workspace
+                # The assistant may read and write anywhere the app can. To
+                # tighten it, use --allow-path <folder> instead and keep
+                # designs/ and renders/ inside that folder.
+                - --allow-any-path
               toolCallTimeoutMs: 330000
               failOnStartupError: true
           - id: skill-filesystem

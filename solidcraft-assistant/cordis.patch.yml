@@ -51,7 +51,9 @@
             name: '@deepseek-ai/dsh-skill-filesystem'
             config:
               customSkillDirs:
-                - !!js process.getBuiltinModule('node:path').join(process.getBuiltinModule('node:path').dirname(process.getBuiltinModule('node:module').createRequire(baseUrl).resolve('@local/solidcraft-assistant/package.json')), 'skills')
+                # The profile's node_modules link survives git installs whose
+                # baseUrl is not a plain directory.
+                - !!js process.env.DSH_PROFILE_DIR + '/node_modules/@local/solidcraft-assistant/skills'
           - id: tool-skill
             name: '@deepseek-ai/dsh-tool-skill'
           - id: tool-fs

@@ -162,24 +162,25 @@ class Parser {
     return left
   }
   factor() {
-    let value = this.unary()
-    if (this.peek() && this.peek().type === '^') {
-      this.next()
-      const exp = this.next()
-      if (!exp || exp.type !== 'number' || !Number.isInteger(exp.value)) {
-        throw new Error('exponent must be an integer number')
-      }
-      if (Object.keys(value.d).length > 0 && !Number.isInteger(exp.value)) {
-        throw new Error('dimensional exponent must be an integer')
-      }
-      value = quantity(Math.pow(value.v, exp.value), addDims({}, value.d, exp.value))
-    }
-    return value
+    return this.unary()
   }
   unary() {
     if (this.peek() && this.peek().type === '-') { this.next(); const q = this.unary(); return quantity(-q.v, q.d) }
     if (this.peek() && this.peek().type === '+') { this.next(); return this.unary() }
-    return this.primary()
+    return this.power()
+  }
+  power() {
+    let value = this.primary()
+    if (this.peek() && this.peek().type === '^') {
+      this.next()
+      const exp = this.unary()
+      if (Object.keys(exp.d).length !== 0) throw new Error('exponent must be dimensionless')
+      if (Object.keys(value.d).length > 0 && !Number.isInteger(exp.v)) {
+        throw new Error('dimensional exponent must be an integer')
+      }
+      value = quantity(Math.pow(value.v, exp.v), addDims({}, value.d, exp.v))
+    }
+    return value
   }
   primary() {
     const token = this.next()
@@ -238,6 +239,9 @@ class Parser {
     if (name === 'asin' || name === 'acos' || name === 'atan') {
       const q = one()
       if (Object.keys(q.d).length !== 0) throw new Error(`${name} requires a dimensionless value`)
+      if ((name === 'asin' || name === 'acos') && (q.v < -1 || q.v > 1)) {
+        throw new Error(`${name} requires a value in [-1, 1]`)
+      }
       return quantity((Math[name](q.v) * 180) / Math.PI, { A: 1 })
     }
     if (name === 'min' || name === 'max') {
@@ -265,6 +269,7 @@ export function evaluateCalc(expression, variables = {}, targetUnit = null) {
   if (!expression || typeof expression !== 'string') throw new Error('expression is required')
   const result = parseExpression(expression, variables, targetUnit)
   const rounded = Number(result.displayValue.toPrecision(12))
+  if (!Number.isFinite(rounded)) throw new Error('result is not a finite number')
   return {
     ok: true,
     expression,

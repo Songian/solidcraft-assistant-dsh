@@ -4,11 +4,11 @@
 export const inject = ['tools']
 
 const SECTIONS = [
-  { key: '结论', aliases: ['结论', 'conclusion', 'summary'] },
-  { key: '假设', aliases: ['假设', 'assumption', 'assumptions'] },
-  { key: '计算', aliases: ['计算', 'calculation', 'calculations', 'formula'] },
-  { key: '校核', aliases: ['校核', '验证', 'verification', 'check'] },
-  { key: '未决', aliases: ['未决', 'open question', 'open questions', 'risk'] },
+  { key: '结论', aliases: ['结论', 'conclusion', 'summary'], required: true },
+  { key: '假设', aliases: ['假设', 'assumption', 'assumptions'], required: false },
+  { key: '计算', aliases: ['计算', 'calculation', 'calculations', 'formula'], required: true },
+  { key: '校核', aliases: ['校核', '验证', 'verification', 'check'], required: true },
+  { key: '未决', aliases: ['未决', 'open question', 'open questions', 'risk'], required: false },
 ]
 
 const BANNED = [
@@ -24,9 +24,9 @@ const BANNED = [
   { phrase: '绝对', level: 'warning' },
 ]
 
-const UNIT_RE = /(mm|cm|m|in|ft|deg|rad|g|kg|s|%|°|MPa|Pa|N|rpm|min|h)(?![A-Za-z])/i
+const UNIT_RE = /(kN·m|N·m|GPa|MPa|kPa|kW|mL|µm|um|mm|cm|kg|Hz|rpm|min|mm|in|ft|deg|rad|Pa|N|V|A|W|K|L|g|s|h|%|°)(?![A-Za-z])/i
 const NUMBER_RE = /(?:^|[\s(（,，;；=])[-+]?\d+(?:\.\d+)?(?![\d.eE])/g
-const STANDARD_RE = /(GB\/T|GB|ISO|DIN|JIS|ASME)\s?[0-9]+(?:[.-][0-9]+)*/gi
+const STANDARD_RE = /\b([A-Z]{2,}(?:\/[A-Z])?)(?:\s[A-Z])?\s?[0-9]+(?:[.-][0-9]+)*/g
 
 function hasSection(text, aliases) {
   return aliases.some((alias) => new RegExp(`(^|\\n)\\s*#{0,3}\\s*${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i').test(text))
@@ -39,6 +39,7 @@ export function checkReport(text) {
   const present = []
   for (const section of SECTIONS) {
     if (hasSection(text, section.aliases)) present.push(section.key)
+    else if (section.required) errors.push(`missing required section: ${section.key}`)
     else warnings.push(`missing section: ${section.key}`)
   }
   for (const item of BANNED) {

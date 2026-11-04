@@ -45,6 +45,18 @@ dsh plugin --profile web add "github:Songian/solidcraft-assistant-dsh#path:/soli
 
 再把 `@local/solidcraft-assistant` 加进该 profile `package.json` 的 `dsh.profile.bundles`，重启 `dsh web`。如果 pnpm 报 `ERR_PNPM_ADDING_TO_ROOT`，在 profile 目录新建 `.npmrc` 写入 `ignore-workspace-root-check=true`。
 
+如果访问 `github.com` 的 HTTPS 超时（TLS 被代理/网络拦截），改用 SSH 规格安装，pnpm 会把它记录为 `github:`：
+
+```sh
+dsh plugin --profile web add "git+ssh://git@github.com/Songian/solidcraft-assistant-dsh.git#path:/solidcraft-assistant"
+```
+
+或在 Creator 里执行：
+
+```text
+plugin_manager install_bundle git+ssh://git@github.com/Songian/solidcraft-assistant-dsh.git#path:/solidcraft-assistant
+```
+
 ### 本地开发
 
 ```sh

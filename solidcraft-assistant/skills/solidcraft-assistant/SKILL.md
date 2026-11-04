@@ -12,7 +12,7 @@ description: Use when the user asks to model, modify, measure, render or export 
    - 改现有设计：同一工具用 `{"skill":"solidcraft-editing"}`；装配/运动用 `solidcraft-mechanisms`。
    - 需要工作流本身时加 `"file":"SKILL.md"`。
    - 不要凭记忆写命令；不确定的命令用 `list_commands {"filter":"关键词"}` 或 `describe_command`。
-2. `inspect_design {"measure":false,"sketches":false}`，即使以为会话是空的。
+2. `brief {"op":"init"}`（已有则 `brief {"op":"read"}`），把目标、标准、需求、参数、checkpoint、产物路径写入 brief；没有 brief 不进入第一次 `batch`。
    - 设计里已有内容：先说明现状，未经用户同意不要 `new_design` / `open`（都会丢弃未保存内容）。
 3. 看工具结果末尾的 note 判断后端：
    - 已连接桌面应用：用户可以实时看到建模。
@@ -32,11 +32,12 @@ description: Use when the user asks to model, modify, measure, render or export 
 
 ## 2. 验证（完成前必须做）
 
-1. 每阶段 `measure {"summary":true}`，与手算体积、包围盒对比（体积容差约 0.2%，包围盒每轴 0.05 mm）。
-2. 位置无法由体积判断：孔/凸台用 `body_topology {"body":"Body1","faces":"cylinders"}` 看 `origin/axis/radius`；对称件用 top 视图截图核对。
+1. 每阶段 `measure {"summary":true}`，把结果传给 `brief {"op":"audit","measure":...}`；对比 brief checkpoint 的 `tol.abs`/`tol.rel`。**不得使用固定的 0.2%/0.05 mm**：容差由 checkpoint 或最小关键特征决定。
+2. 位置无法由体积判断：孔/凸台用 `body_topology {"body":"Body1","faces":"cylinders"}` 看 `origin/axis/radius`，把 topology 传给 `brief audit`；对称件用 top 视图截图核对。
 3. 参数是否真的驱动模型：`check_parameters {"set":{"L":"140 mm"}}`（会还原），看 `errors`、体积和圆柱轴变化。
 4. `inspect_design {"measure":false,"sketches":false}` 确认时间线无 `error`。
-5. 只有数字对得上才可宣布完成；`ok:true` 不等于成功。
+5. `brief audit` 必须返回 `verdict: "verified"` 才算通过；`unverifiable` 要补 checkpoint/measure/路径，`failed` 要修模型。`ok:true` 不等于成功。
+6. 报告中每个数值用 `calc` 复算（带单位），不要心算；交付前用 `report_check` 检查结构/单位/措辞/标准引用。
 
 ## 3. 展示与交付
 
@@ -44,7 +45,8 @@ description: Use when the user asks to model, modify, measure, render or export 
 - 截图：`screenshot {"source":"model","view":"iso","width":1200,"height":800,"path":"<工作目录>/renders/<name>_iso.png"}`；内部结构补 `"view":"top"` 或剖切。`source:"model"` 避免移动用户相机。
 - 在回复中用 `![说明](绝对路径)` 嵌入截图，文件用 Markdown 链接。
 - 设计保存到 `<工作目录>/designs/<name>.sc`；按需导出 `.step` / `.3mf` / `.stl`。保存/导出/截图都用绝对路径，不要依赖 MCP 服务器的相对路径。
-- 中文回答：先给结论（外形尺寸、体积、关键参数），再给 3–6 步摘要；不要粘贴大段 JSON 或工具原始输出。
+- 中文回答：先给结论（外形尺寸、体积、关键参数），再给 3–6 步摘要。
+- 计算用 `calc`（单位/量纲），交付前用 `report_check`；未 verified 的标准/材料知识不得写成“符合标准”。
 
 ## 4. 修改现有设计
 
@@ -52,27 +54,9 @@ description: Use when the user asks to model, modify, measure, render or export 
 - 不要为了省事删除重画；除非用户明确要求重构。
 - 改完必须重新 `measure`，报告体积/包围盒变化。
 
-## 5. 打开 GUI 预览
+## 5. GUI 预览
 
-**铁律：已有的 SolidCraft 窗口只更新，不重启**。绝不 `pkill`、`job_kill`、重新 launch 或用 bash 直接跑 `solidcraft`；也不要为了刷新而关闭整个应用。刷新预览只操作当前设计的 tab：把模型 `save` 到磁盘，再 `push` 让它更新。
-
-1. `python3 scripts/solidcraft_gui.py status`。它报告 `running`（控制通道可达）、`process`（窗口进程）、`unit`（脚本启动的常驻单元）和标签页数。
-2. **已在运行（`running: true`）**：
-   - `save designs/<name>.sc`，把助手当前 headless 设计落盘。
-   - `python3 scripts/solidcraft_gui.py push designs/<name>.sc`：
-     - 同一模型已打开 → 关闭它的旧 tab 并立即重新打开更新后的文件，**标签页数量不变**，模型就地更新（`updated: true`、`new_tab: false`）；
-     - 新模型还没打开 → 只开一个 tab（`new_tab: true`）；
-     - 如果那个 tab 有未保存修改（`dirty`），`push` 会拒绝，先请用户保存或关闭它，绝不丢用户改动。
-   - 只有用户明确说“只调整视角”时才用 `--reframe`（不更新模型，不开/关 tab）。
-3. **没有运行，但 `process: true`**：窗口在跑但控制通道关着。**绝不启动第二个实例**；请用户打开 Preferences → Assistant → “Let AI agents connect”，或在窗口里手动打开文件，然后重新 `status`。
-4. **没有运行且 `process: false`**：
-   - 运行 `python3 scripts/solidcraft_gui.py open [designs/xxx.sc]`。它通过 transient systemd user unit（`solidcraft-preview`）启动，`mode: "systemd"`，跨多次工具调用常驻。
-   - 不要用 bash 直接（前台或后台）运行 `solidcraft`：沙箱会在调用结束时回收它，表现成窗口反复关闭、重开。
-   - 若返回 `mode: "process"`，说明系统没有 user systemd，窗口可能被回收；只启动一次并尽快完成预览。
-5. **未运行且本会话还没有特征**（`inspect_design` 的 timeline 为空）：启动后第一次 MCP 调用会自动桥接到这个窗口；结果末尾不再出现 “headless” note 即已连接，之后建模实时显示，不需要 push。
-6. **未运行但已有建模工作**：MCP 会话固定为 headless，不能中途切换。`save` → `open`（打开该文件）→ 之后每次修改都用 `push` 更新原 tab。
-7. 没有显示环境或启动失败：读 `renders/solidcraft-gui.log`，改用 `screenshot` 在聊天里预览，不要声称已打开窗口。
-8. 预览截图用 `source:"model"`，不要用 `source:"window"` 抢用户当前视图或相机。需要证明窗口已打开时，用 `python3 scripts/solidcraft_gui.py screenshot renders/gui_window.png` 抓窗口。
+读 `references/gui-preview.md`。铁律：已有窗口只更新原 tab，不 `pkill`/重启；同一模型不开新 tab；无显示环境用 `screenshot`。
 
 ## 6. Bug 与崩溃
 

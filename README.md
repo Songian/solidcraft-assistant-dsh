@@ -57,15 +57,6 @@ dsh plugin --profile web add "git+ssh://git@github.com/Songian/solidcraft-assist
 plugin_manager install_bundle git+ssh://git@github.com/Songian/solidcraft-assistant-dsh.git#path:/solidcraft-assistant
 ```
 
-### 本地开发
-
-```sh
-git clone https://github.com/Songian/solidcraft-assistant-dsh.git
-cd solidcraft-assistant-dsh
-```
-
-修改 `solidcraft-assistant/` 后，用同样的 `plugin_manager install_bundle` 安装本地目录即可（本地目录安装会 link，不会复制）。
-
 权限：默认使用 `--allow-any-path`，助手可以读写应用能访问的任意路径，`designs/`、`renders/` 建在当前工作目录即可。要收紧权限，把 `cordis.patch.yml` 里的 `--allow-any-path` 换成 `--allow-path <目录>`，并让 `designs/`、`renders/` 位于该目录内。
 
 ## 使用
@@ -118,22 +109,6 @@ DSH Agent 预设 "solidcraft"
 - 预设通过 `@deepseek-ai/dsh-agent-preset` 声明，MCP 客户端只在预设作用域注册工具。
 - 技能（`SKILL.md` + `references/`）是模型按需加载的流程说明，避免把大量命令写死进 prompt。
 - 命令形状与陷阱以 SolidCraft 自带的 `skill_reference` 为准，随版本更新。
-
-## 验证
-
-```sh
-python3 scripts/verify_mcp.py
-```
-
-会新建一个参数化板件、验证体积、改参数、出图并保存：
-
-```text
-connected: solidcraft 0.29.0
-plate volume: 23335.2 mm3 (expected 23335.2)
-after L=120: 35335.2 mm3 (expected 35335.2)
-design: designs/plate.sc
-OK
-```
 
 ## 配置
 

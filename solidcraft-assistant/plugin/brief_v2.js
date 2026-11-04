@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, renameSync, writeFileSync, realpathSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, realpathSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 
 export const inject = ['tools', 'workingDirectory']
@@ -167,8 +168,10 @@ export function auditBrief(data, root, measure, topology) {
     passed: mapped.length > 0 && volume.status === 'pass' && paths.length > 0 && paths.every((item) => item.status === 'exists') && errors.length === 0,
   }
 
+  const verdict = gate.passed ? 'verified' : (errors.length > 0 ? 'failed' : 'unverifiable')
   return {
-    ok: errors.length === 0 && gate.passed,
+    ok: verdict === 'verified',
+    verdict,
     project: data.project,
     revision: data.revision,
     gate,
@@ -252,7 +255,29 @@ export function apply(ctx) {
       }
 
       if (args.op === 'audit') {
-        return auditBrief(readBrief(file), root, args.measure || null, args.topology || null)
+        const data = readBrief(file)
+        const measure = args.measure || null
+        const topology = args.topology || null
+        const result = auditBrief(data, root, measure, topology)
+        const inputHash = createHash('sha256')
+          .update(JSON.stringify({ measure, topology }))
+          .digest('hex')
+        const reports = join(root, 'reports')
+        mkdirSync(reports, { recursive: true })
+        appendFileSync(
+          join(reports, 'audit.jsonl'),
+          `${JSON.stringify({
+            time: now(),
+            revision: data.revision,
+            verdict: result.verdict,
+            volume: result.volume,
+            inputHash,
+            errors: result.errors,
+            warnings: result.warnings,
+          })}\n`,
+          'utf8',
+        )
+        return result
       }
 
       if (args.op === 'reset') {

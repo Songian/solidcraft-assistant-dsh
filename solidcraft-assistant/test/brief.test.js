@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, mkdirSync, writeFileSync, symlinkSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { auditBrief } from '../plugin/brief.js'
+import { auditBrief } from '../plugin/brief_v2.js'
 
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'brief-'))

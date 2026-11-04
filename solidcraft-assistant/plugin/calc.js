@@ -14,6 +14,7 @@ const UNITS = {
   g: { dims: { M: 1 }, factor: 1, label: 'g' },
   kg: { dims: { M: 1 }, factor: 1000, label: 'kg' },
   s: { dims: { T: 1 }, factor: 1, label: 's' },
+  '%': { dims: {}, factor: 0.01, label: '%' },
 }
 
 const FUNCTIONS = new Set(['sqrt', 'abs', 'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'min', 'max'])
@@ -45,6 +46,11 @@ function dimsToLabel(dims) {
   const d = cleanDims(dims)
   const keys = Object.keys(d)
   if (keys.length === 0) return ''
+  if (d.L === 1 && d.T === -1) return 'mm/s'
+  if (d.L === 1 && d.T === -2) return 'mm/s^2'
+  if (d.M === 1 && d.L === -3) return 'g/mm^3'
+  if (d.L === 2) return 'mm^2'
+  if (d.L === 3) return 'mm^3'
   if (keys.length === 1) {
     const k = keys[0]
     const n = d[k]
@@ -57,6 +63,7 @@ function dimsToLabel(dims) {
 }
 
 function quantity(value, dims) {
+  if (!Number.isFinite(value)) throw new Error('result is not a finite number')
   return { v: value, d: cleanDims(dims) }
 }
 
@@ -80,6 +87,7 @@ function parseTargetUnit(text) {
 }
 
 function tokenize(text) {
+  if (String(text).length > 4096) throw new Error('expression is too long (max 4096 characters)')
   const tokens = []
   let i = 0
   while (i < text.length) {
@@ -98,6 +106,11 @@ function tokenize(text) {
       i += match[0].length
       continue
     }
+    if (c === '%') {
+      tokens.push({ type: 'ident', value: '%' })
+      i += 1
+      continue
+    }
     if ('+-*/^(),'.includes(c)) {
       tokens.push({ type: c })
       i += 1
@@ -105,6 +118,7 @@ function tokenize(text) {
     }
     throw new Error(`unexpected character: ${c}`)
   }
+  if (tokens.length > 512) throw new Error('expression has too many tokens (max 512)')
   return tokens
 }
 
@@ -136,6 +150,13 @@ class Parser {
     }
     return left
   }
+  startsPrimary() {
+    const token = this.peek()
+    return Boolean(token && (token.type === 'number' || token.type === 'ident' || token.type === '('))
+  }
+  multiply(left, right) {
+    return quantity(left.v * right.v, addDims(left.d, right.d, 1))
+  }
   term() {
     let left = this.factor()
     for (;;) {
@@ -143,18 +164,18 @@ class Parser {
       if (!token) break
       if (token.type === '*' || token.type === '/') {
         this.next()
-        const right = this.factor()
+        let right = this.factor()
+        while (this.startsPrimary()) right = this.multiply(right, this.factor())
         if (token.type === '*') {
-          left = quantity(left.v * right.v, addDims(left.d, right.d, 1))
+          left = this.multiply(left, right)
         } else {
           if (right.v === 0) throw new Error('division by zero')
           left = quantity(left.v / right.v, addDims(left.d, right.d, -1))
         }
         continue
       }
-      if (token.type === 'number' || token.type === 'ident' || token.type === '(') {
-        const right = this.factor()
-        left = quantity(left.v * right.v, addDims(left.d, right.d, 1))
+      if (this.startsPrimary()) {
+        left = this.multiply(left, this.factor())
         continue
       }
       break
@@ -175,6 +196,7 @@ class Parser {
       this.next()
       const exp = this.unary()
       if (Object.keys(exp.d).length !== 0) throw new Error('exponent must be dimensionless')
+      if (Math.abs(exp.v) > 64) throw new Error('exponent magnitude exceeds 64')
       if (Object.keys(value.d).length > 0 && !Number.isInteger(exp.v)) {
         throw new Error('dimensional exponent must be an integer')
       }
@@ -265,10 +287,31 @@ function parseExpression(text, variables, targetUnit) {
   return { ...value, displayValue: value.v, displayUnit: dimsToLabel(value.d) }
 }
 
-export function evaluateCalc(expression, variables = {}, targetUnit = null) {
+function roundDecimal(value, places) {
+  if (places === undefined || places === null) return value
+  if (!Number.isInteger(places) || places < 0 || places > 12) throw new Error('decimals must be an integer in [0, 12]')
+  const sign = value < 0 ? -1 : 1
+  const text = Math.abs(value).toString()
+  if (/e/i.test(text)) return Number(value.toFixed(places))
+  const [intPart, fracPart = ''] = text.split('.')
+  const digits = intPart + fracPart
+  const keep = intPart.length + places
+  if (digits.length <= keep) return value
+  let head = digits.slice(0, keep)
+  const next = Number(digits[keep])
+  const last = Number(head.at(-1) || '0')
+  if (next > 5 || (next === 5 && last % 2 === 1)) {
+    head = (BigInt(head || '0') + 1n).toString().padStart(head.length, '0')
+  }
+  const result = Number(`${head.slice(0, intPart.length) || '0'}.${head.slice(intPart.length) || '0'}`)
+  return sign * result
+}
+
+export function evaluateCalc(expression, variables = {}, targetUnit = null, decimals = null) {
   if (!expression || typeof expression !== 'string') throw new Error('expression is required')
   const result = parseExpression(expression, variables, targetUnit)
-  const rounded = Number(result.displayValue.toPrecision(12))
+  const displayed = roundDecimal(Number(result.displayValue.toPrecision(12)), decimals)
+  const rounded = Number(displayed.toPrecision(12))
   if (!Number.isFinite(rounded)) throw new Error('result is not a finite number')
   return {
     ok: true,
@@ -285,7 +328,7 @@ export function apply(ctx) {
     name: 'calc',
     description:
       'Evaluate an engineering expression with units. Supports numbers, + - * / ^, sqrt/abs/sin/cos/tan/asin/acos/atan/min/max, pi, ' +
-      'variables, and units mm/cm/m/in/ft/deg/rad/g/kg/s. Returns value, unit, dimensions and display text.',
+      'variables, and units mm/cm/m/in/ft/deg/rad/g/kg/s/%. Returns value, unit, dimensions and display text.',
     parameters: {
       type: 'object',
       properties: {
@@ -296,6 +339,7 @@ export function apply(ctx) {
           description: 'Optional variables: numbers or unit strings, e.g. {"L":"120 mm"}.',
         },
         unit: { type: 'string', description: 'Optional target unit, e.g. "mm", "in", "g/cm^3".' },
+        decimals: { type: 'integer', minimum: 0, maximum: 12, description: 'Optional decimal places (half-even).' },
       },
       required: ['expression'],
       additionalProperties: false,
@@ -305,7 +349,7 @@ export function apply(ctx) {
       render: (_args, value) => [{ type: 'text', text: JSON.stringify(value, null, 2) }],
     },
     async execute(args) {
-      return evaluateCalc(args.expression, args.variables || {}, args.unit || null)
+      return evaluateCalc(args.expression, args.variables || {}, args.unit || null, args.decimals ?? null)
     },
   })
 }

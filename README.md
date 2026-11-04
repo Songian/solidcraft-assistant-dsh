@@ -60,7 +60,7 @@ dsh plugin --profile web add "git+ssh://git@github.com/Songian/solidcraft-assist
 plugin_manager install_bundle git+ssh://git@github.com/Songian/solidcraft-assistant-dsh.git#path:/solidcraft-assistant
 ```
 
-权限：MCP 只允许项目根（`SOLIDCRAFT_WORKSPACE`，未设置时用 DSH 启动目录）；`designs/`、`renders/` 必须位于项目根内。`preview` 同样只接受项目根内路径。
+权限：新建建模任务时在 DSH 选择项目目录；MCP 按该会话工作区启动 `--allow-path <项目目录>`。`designs/`、`renders/` 必须位于项目根内，`preview` 同样只接受根内路径。
 
 ## 使用
 
@@ -118,7 +118,7 @@ DSH Agent 预设 "solidcraft"
 └── compaction         长会话压缩 + 工具结果裁剪
 ```
 
-- 预设通过 `@deepseek-ai/dsh-agent-preset` 声明，MCP 客户端只在预设作用域注册工具。
+- 预设通过 `@deepseek-ai/dsh-agent-preset` 声明；session-aware bridge 按会话工作区启动 MCP 并只在预设作用域注册工具。
 - 技能（`SKILL.md` + `references/`）是模型按需加载的流程说明，避免把大量命令写死进 prompt。
 - 命令形状与陷阱以 SolidCraft 自带的 `skill_reference` 为准，随版本更新。
 
@@ -126,17 +126,16 @@ DSH Agent 预设 "solidcraft"
 
 | 位置 | 作用 |
 |---|---|
-| `cordis.patch.yml` → `args` 的 `--allow-path` | 必须设置 `SOLIDCRAFT_WORKSPACE`；未设置时 MCP 启动失败（fail-closed） |
-| `serverName` | 工具名前缀，默认 `solidcraft` |
-| `toolCallTimeoutMs` | 单次 MCP 调用超时，默认 330000（长 fillet/批量建模） |
-| `command` | `solidcraft-cli`，也可写绝对路径 |
+| `@local/solidcraft-assistant/mcp/bridge` | 按 DSH 会话工作区启动/复用 `solidcraft-cli mcp --allow-path <目录>`；无工作区即拒绝 |
+| 工具前缀 | `mcp__solidcraft__*` |
+| 超时 | 单次 MCP 调用 330000 ms（长 fillet/批量建模） |
 | `SKILL.md` | 建模/验证/交付/GUI 预览规则；可按团队习惯修改 |
 
 ## 故障排查
 
 - **新任务看不到预设**：刷新页面；确认 bundle 已安装且 profile 的 `dsh.profile.bundles` 含 `@local/solidcraft-assistant`。
-- **没有 `mcp__solidcraft__*` 工具**：确认 `solidcraft-cli` 在启动 DSH 的 `PATH` 中；查看 DSH 日志里 MCP 启动错误；如果改用了 `--allow-path`，目录必须存在。
-- **保存被拒**：把路径放进 `SOLIDCRAFT_WORKSPACE` 指向的项目根。
+- **没有 `mcp__solidcraft__*` 工具**：确认新建任务选择的是“Solidcraft 建模助手”和有效项目目录；`solidcraft-cli` 必须在启动 DSH 的 `PATH` 中；查看 DSH 日志。
+- **保存被拒**：把路径放进当前会话选择的项目目录。
 - **GUI 打不开**：检查 `DISPLAY`；`preview status` 看控制通道；无显示环境时用 `preview screenshot`。
 - **窗口反复关闭重开**：不要用 shell 直接跑 `solidcraft`，用 `preview open`（systemd 常驻）。
 - **标签页越来越多**：只在切换不同模型时才会新开；同一模型 `push` 会原地更新。

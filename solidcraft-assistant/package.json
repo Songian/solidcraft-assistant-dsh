@@ -11,7 +11,8 @@
     "./tools/brief": "./plugin/tools/brief.js",
     "./tools/calc": "./plugin/tools/calc.js",
     "./tools/verifier": "./plugin/tools/verifier.js",
-    "./tools/preview": "./plugin/tools/preview.js"
+    "./tools/preview": "./plugin/tools/preview.js",
+    "./mcp/bridge": "./plugin/solidcraft_bridge.js"
   },
   "files": [
     "plugin/**",

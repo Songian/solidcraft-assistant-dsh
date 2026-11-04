@@ -40,20 +40,7 @@
           - id: time-context
             name: '@deepseek-ai/dsh-time-context'
           - id: mcp-solidcraft
-            name: '@deepseek-ai/dsh-mcp-client'
-            config:
-              serverName: solidcraft
-              transport: stdio
-              command: solidcraft-cli
-              args:
-                - mcp
-                - --param-check
-                - warn
-                # Keep the app's file boundary at the project root.
-                - --allow-path
-                - !!js (() => { const root = process.env.SOLIDCRAFT_WORKSPACE; if (!root) throw new Error('SOLIDCRAFT_WORKSPACE is required; export it to the project root before launching DSH'); return root })()
-              toolCallTimeoutMs: 330000
-              failOnStartupError: true
+            name: '@local/solidcraft-assistant/mcp/bridge'
           - id: skill-filesystem
             name: '@deepseek-ai/dsh-skill-filesystem'
             config:

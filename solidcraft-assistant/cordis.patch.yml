@@ -12,6 +12,8 @@
         description: 通过对话驱动 Solidcraft 做参数化建模、验证尺寸、出图，并按规范整理 bug 报告。
         order: 10
         plugins:
+          - id: security-guard
+            name: '@local/solidcraft-assistant/security/guard'
           - id: brief
             name: '@local/solidcraft-assistant/tools/brief'
           - id: calc

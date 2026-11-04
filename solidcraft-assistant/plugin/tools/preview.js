@@ -107,7 +107,7 @@ function realOrResolved(value) {
   }
 }
 
-function inside(root, value, kind = 'design') {
+export function inside(root, value, kind = 'design') {
   if (typeof value !== 'string' || value.trim() === '') throw new Error('preview: path is required')
   const absolute = isAbsolute(value) ? value : resolve(root, value)
   const rel = relative(realOrResolved(root), realOrResolved(absolute))

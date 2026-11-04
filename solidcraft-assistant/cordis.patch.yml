@@ -5,11 +5,11 @@
 # 因此其它会话不会看到 solidcraft 工具。
 - insert:
     - id: brief
-      name: './plugin/brief_v2.js'
+      name: './plugin/brief_v3.js'
     - id: calc
-      name: './plugin/calc.js'
+      name: './plugin/calc_v2.js'
     - id: report-check
-      name: './plugin/report_check.js'
+      name: './plugin/report_check_v2.js'
     - id: preset-solidcraft
       name: '@deepseek-ai/dsh-agent-preset'
       config:

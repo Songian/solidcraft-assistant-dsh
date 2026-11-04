@@ -1,5 +1,6 @@
 ---
 name: solidcraft-assistant
+knowledgeHash: f19c14d7580f790ee8a2219613586fcca5b5d4db72c84bd8b897332b2d2c2eea
 description: Use when the user asks to model, modify, measure, render or export a part in SolidCraft, or reports a SolidCraft bug or crash, through the solidcraft MCP tools (mcp__solidcraft__*). Covers the conversation workflow, parameterisation, verification and bug-report protocol.
 ---
 
@@ -8,9 +9,8 @@ description: Use when the user asks to model, modify, measure, render or export 
 ## 0. 开场顺序（每次新任务）
 
 1. 读当前版本的权威文档：
-   - 新建零件：`mcp__solidcraft__skill_reference {"skill":"solidcraft-modeling"}`（默认 `reference.md`）。
+   - 新建零件：`mcp__solidcraft__skill_reference {"skill":"solidcraft-modeling"}`。
    - 改现有设计：同一工具用 `{"skill":"solidcraft-editing"}`；装配/运动用 `solidcraft-mechanisms`。
-   - 需要工作流本身时加 `"file":"SKILL.md"`。
    - 不要凭记忆写命令；不确定的命令用 `list_commands {"filter":"关键词"}` 或 `describe_command`。
 2. `brief {"op":"init"}`（已有则 `read`），写入目标、标准、需求、参数、checkpoint、产物路径；没有 brief 不进入第一次 `batch`。标准读 `references/standards/<ID>.md`，未 `verification.status=verified` 不得作合规依据。
    - 设计里已有内容：先说明现状，未经用户同意不要 `new_design` / `open`（都会丢弃未保存内容）。

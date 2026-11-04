@@ -1,0 +1,27 @@
+{
+  "schema": "solidcraft-registry/1",
+  "hardConstraints": 3,
+  "rules": [
+    {
+      "id": "REG.NO.UNVERIFIED.CLAIM",
+      "kind": "hard",
+      "rule": "Unverified standard/material entries must not be used as a compliance basis; report_check rejects them.",
+      "evidence": "test/report_check.test.js",
+      "status": "enforced"
+    },
+    {
+      "id": "REG.PROJECT.ROOT",
+      "kind": "hard",
+      "rule": "MCP and preview paths stay inside SOLIDCRAFT_WORKSPACE; missing env fails closed.",
+      "evidence": "publish/solidcraft-assistant/cordis.patch.yml",
+      "status": "enforced"
+    },
+    {
+      "id": "REG.NO.SHELL.FS",
+      "kind": "hard",
+      "rule": "The solidcraft preset has no bash/pwsh/jobs/web/fs tools.",
+      "evidence": "test/skill-lint.test.js",
+      "status": "enforced"
+    }
+  ]
+}

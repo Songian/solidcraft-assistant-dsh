@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema", "rules"],
+  "properties": {
+    "schema": {"const": "solidcraft-registry/1"},
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "rule", "status"],
+        "properties": {"kind": {"enum": ["hard", "advisory"]}, "status": {"enum": ["enforced", "draft", "retired"]}}
+      }
+    }
+  }
+}

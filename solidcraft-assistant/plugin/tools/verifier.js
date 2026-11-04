@@ -1,6 +1,7 @@
 // P1 report checker: structure, banned phrasing, units, standard citations.
 // Heuristic lint; errors block, warnings advise.
 import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 
 export const inject = ['tools']
 
@@ -45,6 +46,16 @@ function loadStandards() {
 }
 
 const STANDARDS = loadStandards()
+
+function readHash(candidates) {
+  for (const relative of candidates) {
+    try { return createHash('sha256').update(readFileSync(new URL(relative, import.meta.url))).digest('hex') } catch { /* next layout */ }
+  }
+  return null
+}
+
+const KNOWLEDGE_HASH = readHash(['../../knowledge.lock', '../knowledge.lock'])
+const REGISTRY_HASH = readHash(['../../knowledge/constraints/registry.json', '../knowledge/constraints/registry.json'])
 
 function hasSection(text, aliases) {
   return aliases.some((alias) => new RegExp(`(^|\\n)\\s*#{0,3}\\s*${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i').test(text))
@@ -116,7 +127,15 @@ export function checkReport(text) {
     ok: errors.length === 0,
     errors,
     warnings,
-    stats: { chars: text.length, sections: present, standards, citations },
+    stats: {
+      chars: text.length,
+      sections: present,
+      standards,
+      citations,
+      skillVersion: '0.0.1',
+      knowledgeHash: KNOWLEDGE_HASH,
+      registryHash: REGISTRY_HASH,
+    },
   }
 }
 

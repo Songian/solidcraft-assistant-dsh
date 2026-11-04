@@ -5,6 +5,17 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'nod
 export const inject = ['tools', 'workingDirectory']
 
 const SCHEMA = 'solidcraft-brief/2'
+
+function readHash(candidates) {
+  for (const relative of candidates) {
+    try { return createHash('sha256').update(readFileSync(new URL(relative, import.meta.url))).digest('hex') } catch { /* next layout */ }
+  }
+  return null
+}
+
+const KNOWLEDGE_HASH = readHash(['../../knowledge.lock', '../knowledge.lock'])
+const REGISTRY_HASH = readHash(['../../knowledge/constraints/registry.json', '../knowledge/constraints/registry.json'])
+const SKILL_VERSION = '0.0.1'
 const TOP_KEYS = new Set([
   'schema', 'project', 'revision', 'intent', 'requirements', 'intent_parameters',
   'checkpoints', 'artifacts', 'standard_refs', 'actual', 'updated',
@@ -296,6 +307,9 @@ export function apply(ctx) {
             time: now(),
             revision: data.revision,
             verdict: result.verdict,
+            skillVersion: SKILL_VERSION,
+            knowledgeHash: KNOWLEDGE_HASH,
+            registryHash: REGISTRY_HASH,
             volume: result.volume,
             inputHash,
             errors: result.errors,

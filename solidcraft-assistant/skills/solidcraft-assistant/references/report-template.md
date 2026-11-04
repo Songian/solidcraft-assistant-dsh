@@ -11,7 +11,7 @@
 2. <…>
 3. <the step that fails>
 
-Minimal script (`solidcraft-cli run repro.json`):
+Minimal command list (MCP `batch` / `execute`):
 
 ```json
 {"commands":[

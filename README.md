@@ -14,6 +14,7 @@
 - **GUI 预览**：自动发现并复用已运行的 SolidCraft 实例；同一模型修改后**更新原 tab**，只有新模型才新开 tab；绝不反复关闭/重启窗口。
 - **设计任务书（brief）**：Host 工具 `brief` 提供 `init / read / update`，在项目根维护 `brief.json`（schema、revision、参数、需求、产物路径）；开始建模前先立任务书。
 - **工程计算（calc）**：Host 工具 `calc` 支持带单位的表达式（mm/cm/m/in/ft、deg/rad、g/kg、s），白名单解析，无 `eval`；返回数值、单位、量纲与展示文本。
+- **报告检查（report_check）**：Host 工具 `report_check` 检查报告结构（结论/假设/计算/校核/未决）、口语化/伪专业措辞、无单位数值、标准引用是否带版本；错误阻断，警告提示。
 - **作用域隔离**：MCP 工具只在“Solidcraft 建模助手”预设内注册，其它会话看不到。
 
 ## 环境要求
@@ -103,7 +104,8 @@ python3 scripts/solidcraft_gui.py screenshot renders/gui_window.png
 ```text
 Host 工具
 ├── brief              设计任务书（brief.json，init/read/update）
-└── calc               带单位工程计算（白名单解析）
+├── calc               带单位工程计算（白名单解析）
+└── report_check       报告结构/措辞/单位/标准引用检查
 
 DSH Agent 预设 "solidcraft"
 ├── persona            中文建模助手行为约束

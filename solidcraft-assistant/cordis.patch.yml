@@ -8,6 +8,8 @@
       name: './plugin/brief.js'
     - id: calc
       name: './plugin/calc.js'
+    - id: report-check
+      name: './plugin/report_check.js'
     - id: preset-solidcraft
       name: '@deepseek-ai/dsh-agent-preset'
       config:

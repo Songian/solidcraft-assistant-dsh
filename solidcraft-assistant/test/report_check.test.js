@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { checkReport } from '../plugin/tools/report_check.js'
+import { checkReport } from '../plugin/tools/verifier.js'
 
 const good = `## 结论
 体积 56935.17 mm³，误差 0.02%。

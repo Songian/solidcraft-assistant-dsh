@@ -12,6 +12,7 @@
 - **专属技能**：`solidcraft-assistant` 技能覆盖会话流程、参数化规则、验证标准、交付格式和 GUI 预览。
 - **Bug 报告规范**：按 SolidCraft 官方的 `solidcraft-reporting` 流程：全新设计最小复现 → 缩小脚本 → 数字核对 → 搜索已有 issue → 用户同意后才提交。
 - **GUI 预览**：自动发现并复用已运行的 SolidCraft 实例；同一模型修改后**更新原 tab**，只有新模型才新开 tab；绝不反复关闭/重启窗口。
+- **设计任务书（brief）**：Host 工具 `brief` 提供 `init / read / update`，在项目根维护 `brief.json`（schema、revision、参数、需求、产物路径）；开始建模前先立任务书。
 - **作用域隔离**：MCP 工具只在“Solidcraft 建模助手”预设内注册，其它会话看不到。
 
 ## 环境要求
@@ -99,6 +100,9 @@ python3 scripts/solidcraft_gui.py screenshot renders/gui_window.png
 ## 架构
 
 ```text
+Host 工具
+└── brief              设计任务书（brief.json，init/read/update）
+
 DSH Agent 预设 "solidcraft"
 ├── persona            中文建模助手行为约束
 ├── mcp-solidcraft     stdio 连接 solidcraft-cli mcp（工具名 mcp__solidcraft__*）

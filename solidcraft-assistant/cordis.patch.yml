@@ -6,6 +6,8 @@
 - insert:
     - id: brief
       name: './plugin/brief.js'
+    - id: calc
+      name: './plugin/calc.js'
     - id: preset-solidcraft
       name: '@deepseek-ai/dsh-agent-preset'
       config:

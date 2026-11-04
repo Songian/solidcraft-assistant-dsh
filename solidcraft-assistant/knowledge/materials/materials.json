@@ -2,10 +2,76 @@
   "schema": "knowledge/1",
   "kind": "material",
   "entries": [
-    {"id": "MAT.6061-T6", "name": "6061-T6 aluminium", "density_g_cm3": 2.70, "elastic_modulus_gpa": 68.9, "yield_mpa": 276, "ultimate_mpa": 310, "verification": {"status": "unverified", "source": "typical handbook values; verify supplier datasheet", "checkedAt": null}},
-    {"id": "MAT.304", "name": "304 stainless steel", "density_g_cm3": 7.93, "elastic_modulus_gpa": 193, "yield_mpa": 205, "ultimate_mpa": 515, "verification": {"status": "unverified", "source": "typical handbook values; verify supplier datasheet", "checkedAt": null}},
-    {"id": "MAT.Q235B", "name": "Q235B carbon steel", "density_g_cm3": 7.85, "elastic_modulus_gpa": 200, "yield_mpa": 235, "ultimate_mpa": 370, "verification": {"status": "unverified", "source": "typical GB/T 700 values; verify", "checkedAt": null}},
-    {"id": "MAT.ABS", "name": "ABS", "density_g_cm3": 1.04, "elastic_modulus_gpa": 2.3, "yield_mpa": 40, "ultimate_mpa": 40, "verification": {"status": "unverified", "source": "typical injection-moulding grade; verify", "checkedAt": null}},
-    {"id": "MAT.PLA", "name": "PLA", "density_g_cm3": 1.24, "elastic_modulus_gpa": 3.5, "yield_mpa": 50, "ultimate_mpa": 50, "verification": {"status": "unverified", "source": "typical FDM filament; verify", "checkedAt": null}}
+    {
+      "id": "MAT.6061-T6",
+      "name": "6061-T6 aluminium",
+      "density_g_cm3": 2.7,
+      "elastic_modulus_gpa": 68.9,
+      "yield_mpa": 276,
+      "ultimate_mpa": 310,
+      "verification": {
+        "status": "unverified",
+        "source": "typical handbook values; verify supplier datasheet",
+        "checkedAt": null
+      }
+    },
+    {
+      "id": "MAT.304",
+      "name": "304 stainless steel",
+      "density_g_cm3": 7.93,
+      "elastic_modulus_gpa": 193,
+      "yield_mpa": 205,
+      "ultimate_mpa": 515,
+      "verification": {
+        "status": "unverified",
+        "source": "typical handbook values; verify supplier datasheet",
+        "checkedAt": null
+      }
+    },
+    {
+      "id": "MAT.Q235B",
+      "name": "Q235B carbon steel",
+      "density_g_cm3": 7.85,
+      "elastic_modulus_gpa": 200,
+      "yield_mpa": 235,
+      "ultimate_mpa": 370,
+      "verification": {
+        "status": "unverified",
+        "source": "typical GB/T 700 values; verify",
+        "checkedAt": null
+      },
+      "condition": {
+        "thicknessMaxMm": 16
+      },
+      "standard": "GB/T 700"
+    },
+    {
+      "id": "MAT.ABS",
+      "name": "ABS",
+      "density_g_cm3": 1.04,
+      "elastic_modulus_gpa": 2.3,
+      "yield_mpa": null,
+      "verification": {
+        "status": "unverified",
+        "source": "typical injection-moulding grade; verify",
+        "checkedAt": null
+      },
+      "tensile_mpa": 40,
+      "yield_basis": "none"
+    },
+    {
+      "id": "MAT.PLA",
+      "name": "PLA",
+      "density_g_cm3": 1.24,
+      "elastic_modulus_gpa": 3.5,
+      "yield_mpa": null,
+      "verification": {
+        "status": "unverified",
+        "source": "typical FDM filament; verify",
+        "checkedAt": null
+      },
+      "tensile_mpa": 50,
+      "yield_basis": "none"
+    }
   ]
 }

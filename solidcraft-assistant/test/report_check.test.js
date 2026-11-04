@@ -19,6 +19,12 @@ test('good report passes', () => {
   assert.deepEqual(result.errors, [])
 })
 
+test('unverified standard citation fails', () => {
+  const result = checkReport('## 结论\n符合 GB/T 1804-2000 表1 m 级。\n## 计算\n1 mm\n## 校核\n1 mm')
+  assert.equal(result.ok, false)
+  assert.equal(result.errors.some((error) => error.includes('not verified')), true)
+})
+
 test('colloquial and uncited compliance fail', () => {
   const result = checkReport('结论：大概。这个零件应该没问题，符合 ASTM F2921 标准。')
   assert.equal(result.ok, false)

@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SolidCraft knowledge subset (standard or material)",
+  "oneOf": [
+    {"$ref": "#/$defs/standard"},
+    {"$ref": "#/$defs/material"}
+  ],
+  "$defs": {
+    "verification": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["unverified", "verified", "deprecated", "withdrawn"]},
+        "checkedBy": {"type": ["string", "null"]},
+        "checkedAt": {"type": ["string", "null"]},
+        "locator": {"type": "string"},
+        "contentHash": {"type": ["string", "null"]}
+      },
+      "if": {"properties": {"status": {"const": "verified"}}},
+      "then": {"required": ["checkedBy", "checkedAt", "locator", "contentHash"]}
+    },
+    "rule": {
+      "type": "object",
+      "required": ["id", "topic", "standard", "edition", "verification"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^(GB|ISO)\\.[A-Z0-9.]+$"},
+        "topic": {"type": "string"},
+        "standard": {"type": "string"},
+        "edition": {"type": "string"},
+        "unit": {"type": "string"},
+        "verification": {"$ref": "#/$defs/verification"},
+        "scope": {"type": "object"}
+      }
+    },
+    "standard": {
+      "type": "object",
+      "required": ["schema", "id", "rules"],
+      "properties": {
+        "schema": {"const": "solidcraft-standard/1"},
+        "id": {"enum": ["GB", "ISO"]},
+        "rules": {"type": "array", "items": {"$ref": "#/$defs/rule"}}
+      }
+    },
+    "material": {
+      "type": "object",
+      "required": ["schema", "kind", "entries"],
+      "properties": {
+        "schema": {"const": "knowledge/1"},
+        "kind": {"const": "material"},
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "density_g_cm3", "verification"],
+            "properties": {
+              "id": {"type": "string"},
+              "name": {"type": "string"},
+              "density_g_cm3": {"type": "number", "exclusiveMinimum": 0},
+              "verification": {"$ref": "#/$defs/verification"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

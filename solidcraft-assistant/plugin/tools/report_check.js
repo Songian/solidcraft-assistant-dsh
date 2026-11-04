@@ -1,5 +1,6 @@
 // P1 report checker: structure, banned phrasing, units, standard citations.
 // Heuristic lint; errors block, warnings advise.
+import { readFileSync } from 'node:fs'
 
 export const inject = ['tools']
 
@@ -26,6 +27,24 @@ const BANNED = [
 const UNIT_RE = /(kN·m|N·m|GPa|MPa|kPa|kW|mL|µm|um|mm|cm|kg|Hz|rpm|min|mm|in|ft|deg|rad|Pa|N|V|A|W|K|L|g|s|h|%|°)(?![A-Za-z])/i
 const NUMBER_RE = /(?:^|[\s(（,，;；=])[-+]?\d+(?:\.\d+)?(?![\d.eE])/g
 const STANDARD_RE = /\b([A-Z]{2,}(?:\/[A-Z])?)(?:\s[A-Z])?\s?[0-9]+(?:[.-][0-9]+)*/g
+
+function loadStandards() {
+  const rules = []
+  for (const name of ['GB', 'ISO']) {
+    for (const relative of [`../knowledge/standards/${name}.json`, `../../knowledge/standards/${name}.json`]) {
+      try {
+        const doc = JSON.parse(readFileSync(new URL(relative, import.meta.url), 'utf8'))
+        for (const rule of doc.rules || []) rules.push({ ...rule, profile: doc.id })
+        break
+      } catch {
+        // try the other package layout
+      }
+    }
+  }
+  return rules
+}
+
+const STANDARDS = loadStandards()
 
 function hasSection(text, aliases) {
   return aliases.some((alias) => new RegExp(`(^|\\n)\\s*#{0,3}\\s*${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i').test(text))
@@ -69,10 +88,23 @@ export function checkReport(text) {
   }
   const standards = [...new Set((text.match(STANDARD_RE) || []).map((s) => s.replace(/\s+/g, ' ').trim()))]
   let standardsWithEdition = 0
+  const citations = []
   for (const standard of standards) {
     const index = text.indexOf(standard)
-    if (/(?:-|:)\s?\d{4}\b/.test(text.slice(index, index + 48))) standardsWithEdition += 1
+    const withEdition = /(?:-|:)\s?\d{4}\b/.test(text.slice(index, index + 48))
+    if (withEdition) standardsWithEdition += 1
     else warnings.push(`standard citation without an edition year: ${standard}`)
+    const rule = STANDARDS.find((item) => standard.startsWith(item.standard) && item.edition && standard.includes(item.edition))
+    if (rule) {
+      citations.push({ standard, profile: rule.profile, status: rule.verification?.status || 'unknown' })
+      if (rule.verification?.status !== 'verified') {
+        errors.push(`standard citation is not verified: ${standard}`)
+      }
+    } else if (/^(GB|ISO)/i.test(standard)) {
+      warnings.push(`standard citation not found in the knowledge subset: ${standard}`)
+    } else {
+      citations.push({ standard, profile: 'external', status: 'unknown' })
+    }
   }
   if (/符合[^\n]{0,12}标准/.test(text) && standardsWithEdition === 0) {
     errors.push('compliance claim without a standard citation with an edition year')
@@ -84,7 +116,7 @@ export function checkReport(text) {
     ok: errors.length === 0,
     errors,
     warnings,
-    stats: { chars: text.length, sections: present, standards },
+    stats: { chars: text.length, sections: present, standards, citations },
   }
 }
 

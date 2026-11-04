@@ -1,10 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 
 const gb = JSON.parse(readFileSync(new URL('../knowledge/standards/GB.json', import.meta.url), 'utf8'))
 const iso = JSON.parse(readFileSync(new URL('../knowledge/standards/ISO.json', import.meta.url), 'utf8'))
 const materials = JSON.parse(readFileSync(new URL('../knowledge/materials/materials.json', import.meta.url), 'utf8'))
+const schema = JSON.parse(readFileSync(new URL('../knowledge/schema/knowledge.schema.json', import.meta.url), 'utf8'))
+const lock = readFileSync(new URL('../knowledge.lock', import.meta.url), 'utf8')
 
 function linear(rule, value) {
   const hit = rule.ranges.find(([lo, hi]) => value > lo && value <= hi)
@@ -26,6 +29,16 @@ test('rules carry provenance and unverified status', () => {
       assert.ok(rule.verification)
       assert.equal(rule.verification.status, 'unverified')
     }
+  }
+})
+
+test('knowledge schema and lock are present', () => {
+  assert.ok(schema.$defs.standard)
+  assert.ok(schema.$defs.material)
+  for (const line of lock.trim().split('\n')) {
+    const [hash, file] = line.trim().split(/\s+/)
+    const content = readFileSync(new URL(`../${file}`, import.meta.url))
+    assert.equal(createHash('sha256').update(content).digest('hex'), hash, file)
   }
 })
 

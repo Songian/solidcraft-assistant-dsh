@@ -79,6 +79,8 @@ plugin_manager install_bundle git+ssh://git@github.com/Songian/solidcraft-assist
 
 ## GUI 预览
 
+> 预览脚本随本仓库提供；只安装 bundle 时，请从仓库目录运行。
+
 ```sh
 python3 scripts/solidcraft_gui.py status          # running/process/unit、端口、标签页数
 python3 scripts/solidcraft_gui.py open designs/plate.sc

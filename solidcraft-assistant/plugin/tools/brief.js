@@ -88,7 +88,7 @@ function measureVolume(measure) {
   return null
 }
 
-export function auditBrief(data, root, measure, topology) {
+export function auditBrief(data, root, measure, topology, stage = null) {
   const errors = []
   const warnings = []
   const requirements = Array.isArray(data.requirements) ? data.requirements : []
@@ -96,7 +96,7 @@ export function auditBrief(data, root, measure, topology) {
   const unmapped = []
   for (const requirement of requirements) {
     const verify = requirement?.verify
-    if (verify && typeof verify === 'object' && typeof verify.tool === 'string' && typeof verify.predicate === 'string') {
+    if (verify && typeof verify === 'object' && ['measure', 'body_topology'].includes(verify.tool) && typeof verify.predicate === 'string' && verify.predicate.trim() !== '') {
       mapped.push(requirement.id)
     } else {
       unmapped.push(requirement?.id || '(no id)')
@@ -105,23 +105,42 @@ export function auditBrief(data, root, measure, topology) {
   if (unmapped.length > 0) warnings.push(`requirements without executable verify: ${unmapped.join(', ')}`)
 
   const checkpoints = Array.isArray(data.checkpoints) ? data.checkpoints : []
-  const checkpoint = [...checkpoints].reverse().find((item) => item?.expected && typeof item.expected.volume_mm3 === 'number')
+  const checkpoint = stage
+    ? checkpoints.find((item) => item?.after === stage && item?.expected && typeof item.expected.volume_mm3 === 'number')
+    : [...checkpoints].reverse().find((item) => item?.expected && typeof item.expected.volume_mm3 === 'number')
   const measured = measureVolume(measure)
   let volume = { status: 'unverifiable', reason: 'no checkpoint with expected volume_mm3' }
   if (checkpoint && measured !== null) {
     const expected = checkpoint.expected.volume_mm3
     const tol = checkpoint.tol || {}
+    const minFeature = checkpoint.minFeatureMm3
     const abs = Math.abs(measured - expected)
     const rel = expected === 0 ? null : abs / Math.abs(expected)
+    const declaredAbs = typeof tol.abs === 'number' ? tol.abs : null
+    const declaredRel = typeof tol.rel === 'number' ? tol.rel : null
+    let allowedAbs = null
+    let allowedRel = null
+    if (typeof minFeature === 'number' && Number.isFinite(minFeature) && minFeature > 0) {
+      allowedAbs = Math.min(declaredAbs ?? Infinity, minFeature / 2)
+      allowedRel = allowedAbs / Math.abs(expected)
+      if (declaredAbs !== null && declaredAbs > allowedAbs) {
+        warnings.push(`declared tol.abs ${declaredAbs} exceeds minFeature/2 ${allowedAbs}; capped`)
+      }
+    } else {
+      warnings.push('checkpoint missing minFeatureMm3; tolerance cannot be bounded')
+    }
     let pass = null
-    if (typeof tol.abs === 'number') pass = abs <= tol.abs
-    else if (typeof tol.rel === 'number') pass = rel !== null && rel <= tol.rel
+    if (allowedAbs !== null) pass = abs <= allowedAbs
+    else if (declaredRel !== null) pass = rel !== null && rel <= declaredRel
     volume = {
       status: pass === null ? 'unverifiable' : pass ? 'pass' : 'fail',
-      expected, measured, abs, rel, tol, checkpoint: checkpoint.after || null,
+      expected, measured, abs, rel,
+      tol,
+      tolResolved: allowedAbs !== null ? { abs: allowedAbs, rel: allowedRel, source: 'minFeature/2' } : declaredRel !== null ? { rel: declaredRel, source: 'declared' } : null,
+      checkpoint: checkpoint.after || null,
     }
     if (pass === false) errors.push(`volume outside tolerance: measured ${measured}, expected ${expected}`)
-    if (pass === null) warnings.push('checkpoint has no numeric tolerance')
+    if (pass === null) warnings.push('checkpoint has no bounded numeric tolerance')
   } else if (!checkpoint) {
     warnings.push('no checkpoint with expected volume_mm3')
   } else if (measured === null) {
@@ -210,6 +229,8 @@ export function apply(ctx) {
         patch: { type: 'object', additionalProperties: true, description: 'Known top-level fields to merge for update.' },
         measure: { type: 'object', additionalProperties: true, description: 'measure tool JSON (total.volume_mm3).' },
         topology: { type: 'object', additionalProperties: true, description: 'body_topology JSON.' },
+        stage: { type: 'string', description: 'Optional checkpoint stage (checkpoint.after) to audit.' },
+        revision: { type: 'integer', description: 'Optional expected brief revision; a mismatch fails the audit (CAS).' },
         confirm: { type: 'boolean', description: 'Required for reset: archive the existing brief and start a new one.' },
       },
       required: ['op'],
@@ -258,7 +279,10 @@ export function apply(ctx) {
         const data = readBrief(file)
         const measure = args.measure || null
         const topology = args.topology || null
-        const result = auditBrief(data, root, measure, topology)
+        if (args.revision !== undefined && args.revision !== data.revision) {
+          return { ok: false, verdict: 'failed', error: `stale brief: expected revision ${args.revision}, found ${data.revision}` }
+        }
+        const result = auditBrief(data, root, measure, topology, args.stage || null)
         const inputHash = createHash('sha256')
           .update(JSON.stringify({ measure, topology }))
           .digest('hex')

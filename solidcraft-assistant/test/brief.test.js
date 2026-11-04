@@ -17,7 +17,7 @@ const base = {
   project: 'p',
   revision: 1,
   requirements: [{ id: 'R1', verify: { tool: 'measure', predicate: 'bbox' } }],
-  checkpoints: [{ after: 'base', expected: { volume_mm3: 12000 }, tol: { abs: 1 } }],
+  checkpoints: [{ after: 'base', expected: { volume_mm3: 12000 }, tol: { abs: 1 }, minFeatureMm3: 32.19 }],
   artifacts: { design: 'designs/plate.sc', renders: [] },
 }
 

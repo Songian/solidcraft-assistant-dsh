@@ -21,7 +21,6 @@ const BANNED = [
   { phrase: '高精度', level: 'warning' },
   { phrase: '优化设计', level: 'warning' },
   { phrase: '保证', level: 'warning' },
-  { phrase: '绝对', level: 'warning' },
 ]
 
 const UNIT_RE = /(kN·m|N·m|GPa|MPa|kPa|kW|mL|µm|um|mm|cm|kg|Hz|rpm|min|mm|in|ft|deg|rad|Pa|N|V|A|W|K|L|g|s|h|%|°)(?![A-Za-z])/i
@@ -69,13 +68,14 @@ export function checkReport(text) {
     }
   }
   const standards = [...new Set((text.match(STANDARD_RE) || []).map((s) => s.replace(/\s+/g, ' ').trim()))]
+  let standardsWithEdition = 0
   for (const standard of standards) {
-    if (!/(?:-|:)\s?\d{4}\b/.test(text.slice(text.indexOf(standard), text.indexOf(standard) + 40))) {
-      warnings.push(`standard citation without an edition year: ${standard}`)
-    }
+    const index = text.indexOf(standard)
+    if (/(?:-|:)\s?\d{4}\b/.test(text.slice(index, index + 48))) standardsWithEdition += 1
+    else warnings.push(`standard citation without an edition year: ${standard}`)
   }
-  if (/符合[^\n]{0,12}标准/.test(text) && standards.length === 0) {
-    errors.push('compliance claim without a standard citation')
+  if (/符合[^\n]{0,12}标准/.test(text) && standardsWithEdition === 0) {
+    errors.push('compliance claim without a standard citation with an edition year')
   }
   if (/⟨calc:[^⟩]+⟩/.test(text) && !/=/.test(text)) {
     warnings.push('calc marker present but no formula/substitution found')

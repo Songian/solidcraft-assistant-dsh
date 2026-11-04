@@ -78,7 +78,9 @@ function insideRoot(root, value) {
   const absolute = isAbsolute(value) ? value : resolve(root, value)
   const rel = relative(realOrResolved(root), realOrResolved(absolute))
   const inside = rel !== '' && rel !== '..' && !rel.startsWith(`..${sep}`) && !isAbsolute(rel)
-  return { absolute, inside, invalid: false }
+  const parts = rel.split(sep).map((part) => part.toLowerCase())
+  const denied = parts.some((part) => part === '.scdata' || part === '.git' || part === 'node_modules' || part.startsWith('.env') || part.includes('.token') || part.includes('.pem') || part.startsWith('id_'))
+  return { absolute, inside, invalid: denied }
 }
 
 function measureVolume(measure) {
@@ -162,9 +164,9 @@ export function auditBrief(data, root, measure, topology, stage = null) {
       continue
     }
     const check = insideRoot(root, value)
-    if (!check.inside) {
-      errors.push(`${label} is outside project root: ${value}`)
-      paths.push({ label, value, status: 'outside' })
+    if (!check.inside || check.invalid) {
+      errors.push(`${label} is outside project root or denied: ${value}`)
+      paths.push({ label, value, status: check.invalid ? 'denied' : 'outside' })
       continue
     }
     const exists = existsSync(check.absolute)

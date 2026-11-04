@@ -11,7 +11,10 @@ const UNIT = 'solidcraft-preview'
 const DATA = join(process.env.XDG_DATA_HOME || join(homedir(), '.local', 'share'), 'solidcraft', 'control')
 
 function port() {
-  try { return Number(readFileSync(join(DATA, 'current.port'), 'utf8').trim()) } catch { return null }
+  try {
+    const value = Number(readFileSync(join(DATA, 'current.port'), 'utf8').trim())
+    return Number.isInteger(value) && value > 0 && value < 65536 ? value : null
+  } catch { return null }
 }
 
 function token(p) {
@@ -56,7 +59,7 @@ async function listening(p) {
 
 async function status() {
   const p = port()
-  const result = { running: false, process: processRunning(), unit: unitActive(), portFile: join(DATA, 'current.port') }
+  const result = { running: false, process: processRunning(), unit: unitActive(), control: p ? 'available' : 'absent' }
   if (!(await listening(p))) return result
   result.running = true
   result.port = p
@@ -85,9 +88,11 @@ function launch(design) {
   }
   args.push('solidcraft')
   if (design) args.push(design)
+  let spawnError = null
   const child = spawn('systemd-run', args, { detached: true, stdio: 'ignore' })
+  child.on('error', (error) => { spawnError = error })
   child.unref()
-  return waitForPort(30).then((p) => ({ port: p, mode: 'systemd' }))
+  return waitForPort(30).then((p) => ({ port: p, mode: 'systemd', error: spawnError ? String(spawnError) : null }))
 }
 
 function rootFor(ctx, exec) {
@@ -102,12 +107,22 @@ function realOrResolved(value) {
   }
 }
 
-function inside(root, value) {
-  if (typeof value !== 'string' || value.trim() === '') throw new Error('preview: design path is required')
+function inside(root, value, kind = 'design') {
+  if (typeof value !== 'string' || value.trim() === '') throw new Error('preview: path is required')
   const absolute = isAbsolute(value) ? value : resolve(root, value)
   const rel = relative(realOrResolved(root), realOrResolved(absolute))
-  if (rel === '' || rel === '..' || rel.startsWith('..' + (process.platform === 'win32' ? '\\' : '/')) || isAbsolute(rel)) {
+  const sep = process.platform === 'win32' ? '\\' : '/'
+  if (rel === '' || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
     throw new Error(`preview: path is outside project root: ${value}`)
+  }
+  const parts = rel.split(sep).map((part) => part.toLowerCase())
+  if (parts.some((part) => part === '.scdata' || part === '.git' || part === 'node_modules' || part.startsWith('.env') || part.includes('.token') || part.includes('.pem') || part.startsWith('id_'))) {
+    throw new Error(`preview: denied path: ${value}`)
+  }
+  if (kind === 'design' && !absolute.toLowerCase().endsWith('.sc')) throw new Error('preview: design must be a .sc file')
+  if (kind === 'screenshot') {
+    if (!absolute.toLowerCase().endsWith('.png')) throw new Error('preview: screenshot must be a .png file')
+    if (parts[0] !== 'renders') throw new Error('preview: screenshot must be under renders/')
   }
   return absolute
 }
@@ -118,6 +133,7 @@ async function push(p, design, view = 'iso', reframe = false) {
   const target = basename(design).replace(/\.[^.]+$/, '').toLowerCase()
   const matches = []
   ;(info.documents || []).forEach((item, index) => { if (String(item.name || '').toLowerCase() === target) matches.push(index) })
+  if (matches.length > 1) throw new Error('preview: multiple open tabs share this design name; close one in SolidCraft first')
   for (const index of matches) {
     if (info.documents[index].dirty) throw new Error(`the open '${target}' tab has unsaved changes; save it in SolidCraft first`)
   }
@@ -156,7 +172,7 @@ export function apply(ctx) {
       if (args.op === 'status') return status()
       if (args.op === 'open') {
         const current = await status()
-        const design = args.design ? inside(root, args.design) : null
+        const design = args.design ? inside(root, args.design, 'design') : null
         if (current.running) {
           const result = { launched: false, ...current }
           if (design) result.push = await push(current.port, design, args.view || 'iso', Boolean(args.reframe))
@@ -173,12 +189,12 @@ export function apply(ctx) {
         if (!args.design) throw new Error('preview push requires design')
         const current = await status()
         if (!current.running) return { running: false, hint: 'run preview open first' }
-        return push(current.port, inside(root, args.design), args.view || 'iso', Boolean(args.reframe))
+        return push(current.port, inside(root, args.design, 'design'), args.view || 'iso', Boolean(args.reframe))
       }
       if (args.op === 'screenshot') {
         const current = await status()
         if (!current.running) return { running: false, hint: 'run preview open first' }
-        const target = args.design ? inside(root, args.design) : join(root, 'renders', 'gui_window.png')
+        const target = args.design ? inside(root, args.design, 'screenshot') : join(root, 'renders', 'gui_window.png')
         mkdirSync(dirname(target), { recursive: true })
         const shot = await request(current.port, 'ui.screenshot', { path: target }, 60000)
         return { path: target, ...shot }

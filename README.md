@@ -12,11 +12,11 @@
 - **专属技能**：`solidcraft-assistant` 技能覆盖会话流程、参数化规则、验证标准、交付格式和 GUI 预览。
 - **Bug 报告规范**：按 SolidCraft 官方的 `solidcraft-reporting` 流程：全新设计最小复现 → 缩小脚本 → 数字核对 → 搜索已有 issue → 用户同意后才提交。
 - **GUI 预览**：自动发现并复用已运行的 SolidCraft 实例；同一模型修改后**更新原 tab**，只有新模型才新开 tab；绝不反复关闭/重启窗口。
-- **设计任务书（brief）**：Host 工具 `brief` 提供 `init / read / update / audit`，在项目根维护 `brief.json`（schema、revision、参数、需求、产物路径）；`audit` 接收 `measure`/`topology`，报告体积偏差、未映射需求与路径违规。
-- **工程计算（calc）**：Host 工具 `calc` 支持带单位的表达式（mm/cm/m/in/ft、deg/rad、g/kg、s），白名单解析，无 `eval`；返回数值、单位、量纲与展示文本。
-- **报告检查（report_check）**：Host 工具 `report_check` 检查报告结构（结论/假设/计算/校核/未决）、口语化/伪专业措辞、无单位数值、标准引用是否带版本；错误阻断，警告提示。
+- **设计任务书（brief）**：预设工具 `brief` 提供 `init / read / update / audit`，在项目根维护 `brief.json`（schema、revision、参数、需求、产物路径）；`audit` 接收 `measure`/`topology`，报告体积偏差、未映射需求与路径违规。
+- **工程计算（calc）**：预设工具 `calc` 支持带单位的表达式（mm/cm/m/in/ft、deg/rad、g/kg、s），白名单解析，无 `eval`；返回数值、单位、量纲与展示文本。
+- **报告检查（report_check）**：预设工具 `report_check` 检查报告结构（结论/假设/计算/校核/未决）、口语化/伪专业措辞、无单位数值、标准引用是否带版本；错误阻断，警告提示。
 - **GB/ISO 知识子集**：`knowledge/standards/{GB,ISO}.json` 与 Skill references 保存公差/通孔/沉孔/倒圆/Ra 的数值分档；当前全部 `unverified`，P3 逐条核对官方目录后才可作为合规依据。
-- **作用域隔离**：MCP 工具只在“Solidcraft 建模助手”预设内注册，其它会话看不到。当前 `brief`/`calc`/`report_check` 为 Host 级全局工具，后续收窄到该预设。
+- **作用域隔离**：MCP 与 `brief`/`calc`/`report_check`/`preview` 都只在“Solidcraft 建模助手”预设内注册，其它会话看不到。
 
 ## 环境要求
 
@@ -83,7 +83,7 @@ plugin_manager install_bundle git+ssh://git@github.com/Songian/solidcraft-assist
 
 ## GUI 预览
 
-预览由 Host 工具 `preview` 提供，不需要 bash 或 Python 脚本：
+预览由预设工具 `preview` 提供，不需要 bash 或 Python 脚本：
 
 ```text
 preview {"op":"status"}
@@ -104,7 +104,7 @@ preview {"op":"screenshot","design":"renders/gui_window.png"}
 ## 架构
 
 ```text
-Host 工具
+预设工具（solidcraft 作用域）
 ├── brief              设计任务书（brief.json，init/read/update/audit）
 ├── calc               带单位工程计算（白名单解析）
 ├── report_check       报告结构/措辞/单位/标准引用检查

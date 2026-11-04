@@ -12,8 +12,6 @@
         description: 通过对话驱动 Solidcraft 做参数化建模、验证尺寸、出图，并按规范整理 bug 报告。
         order: 10
         plugins:
-          - id: security-guard
-            name: '@local/solidcraft-assistant/security/guard'
           - id: brief
             name: '@local/solidcraft-assistant/tools/brief'
           - id: calc
@@ -65,12 +63,6 @@
                 - !!js process.env.DSH_PROFILE_DIR + '/node_modules/@local/solidcraft-assistant/skills'
           - id: tool-skill
             name: '@deepseek-ai/dsh-tool-skill'
-          - id: tool-fs
-            name: '@deepseek-ai/dsh-tool-fs'
-          - id: tool-fs-search
-            name: '@deepseek-ai/dsh-tool-fs-search'
-            config:
-              sampleOverCapGlobResults: false
           - id: tool-todo
             name: '@deepseek-ai/dsh-tool-todo'
             config:

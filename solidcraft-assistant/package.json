@@ -11,8 +11,7 @@
     "./tools/brief": "./plugin/tools/brief.js",
     "./tools/calc": "./plugin/tools/calc.js",
     "./tools/verifier": "./plugin/tools/verifier.js",
-    "./tools/preview": "./plugin/tools/preview.js",
-    "./security/guard": "./plugin/security_guard_v2.js"
+    "./tools/preview": "./plugin/tools/preview.js"
   },
   "files": [
     "plugin/**",

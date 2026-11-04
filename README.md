@@ -114,7 +114,7 @@ DSH Agent 预设 "solidcraft"
 ├── mcp-solidcraft     stdio 连接 solidcraft-cli mcp（工具名 mcp__solidcraft__*）
 ├── skill-filesystem   挂载 skills/solidcraft-assistant
 ├── tool-skill         按需加载技能
-├── tool-fs / fs-search / todo / ask-user / present
+├── todo / ask-user / present
 └── compaction         长会话压缩 + 工具结果裁剪
 ```
 

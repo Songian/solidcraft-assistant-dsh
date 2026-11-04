@@ -1,6 +1,6 @@
 {
   "name": "@local/solidcraft-assistant",
-  "version": "0.0.1-alpha",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "description": "SolidCraft parametric modelling assistant for DSH: MCP connection, modelling skill and bug-report protocol.",

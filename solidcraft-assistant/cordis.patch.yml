@@ -5,7 +5,7 @@
 # 因此其它会话不会看到 solidcraft 工具。
 - insert:
     - id: brief
-      name: './plugin/brief.js'
+      name: './plugin/brief_v2.js'
     - id: calc
       name: './plugin/calc.js'
     - id: report-check

@@ -23,8 +23,8 @@
 - SolidCraft **0.29+**（`solidcraft`、`solidcraft-cli` 在 `PATH` 中）
 - DSH（测试于 `0.2.1-rc.5`）
 - Python **3.10+**（预览脚本、验证脚本）
-- 桌面环境；GUI 预览在 Linux + systemd user manager 下最稳（无 systemd 时脚本会退回普通进程启动）
-- 操作系统：Linux（已在 X11 下实测）；macOS/Windows 可建模与出图，GUI 预览脚本中的 systemd 路径不适用
+- 桌面环境；GUI 预览在 Linux + systemd user manager 下最稳（无 systemd 时退回普通进程启动）
+- 操作系统：Linux（已在 X11 下实测）；macOS/Windows 可建模与出图，`preview` 的 systemd 路径不适用
 
 ## 安装
 
@@ -61,7 +61,7 @@ dsh plugin --profile web add "git+ssh://git@github.com/Songian/solidcraft-assist
 plugin_manager install_bundle git+ssh://git@github.com/Songian/solidcraft-assistant-dsh.git#path:/solidcraft-assistant
 ```
 
-权限：默认使用 `--allow-any-path`，助手可以读写应用能访问的任意路径，`designs/`、`renders/` 建在当前工作目录即可。要收紧权限，把 `cordis.patch.yml` 里的 `--allow-any-path` 换成 `--allow-path <目录>`，并让 `designs/`、`renders/` 位于该目录内。
+权限：MCP 只允许项目根（`SOLIDCRAFT_WORKSPACE`，未设置时用 DSH 启动目录）；`designs/`、`renders/` 必须位于项目根内。`preview` 同样只接受项目根内路径。
 
 ## 使用
 
@@ -83,22 +83,23 @@ plugin_manager install_bundle git+ssh://git@github.com/Songian/solidcraft-assist
 
 ## GUI 预览
 
-> 预览脚本随本仓库提供；只安装 bundle 时，请从仓库目录运行。
+预览由 Host 工具 `preview` 提供，不需要 bash 或 Python 脚本：
 
-```sh
-python3 scripts/solidcraft_gui.py status          # running/process/unit、端口、标签页数
-python3 scripts/solidcraft_gui.py open designs/plate.sc
-python3 scripts/solidcraft_gui.py push designs/plate.sc          # 更新原 tab；没有才新开
-python3 scripts/solidcraft_gui.py push designs/plate.sc --reframe  # 只调视角
-python3 scripts/solidcraft_gui.py screenshot renders/gui_window.png
+```text
+preview {"op":"status"}
+preview {"op":"open","design":"designs/plate.sc","view":"iso"}
+preview {"op":"push","design":"designs/plate.sc","view":"top"}
+preview {"op":"push","design":"designs/plate.sc","reframe":true}
+preview {"op":"screenshot","design":"renders/gui_window.png"}
 ```
 
 设计要点：
 
-- `open` 只在没有实例时启动，优先用 transient systemd user unit（`solidcraft-preview`）让窗口跨命令常驻；已有实例直接复用，绝不重启。
-- `push` 对**同一个模型**会关闭它旧的 tab 并立即打开更新后的文件，标签页数量不变；对**新模型**才新开 tab。SolidCraft 没有 reload 命令，这是保持“原地更新”的可靠方式。
+- `open` 只在没有实例时启动，优先用 transient systemd user unit（`solidcraft-preview`）；已有实例直接复用，绝不重启。
+- `push` 对**同一个模型**关闭旧 tab 并立即打开更新后的文件，标签页数量不变；对**新模型**才新开 tab。
 - 目标 tab 有未保存修改时 `push` 拒绝，避免丢用户改动。
 - 控制通道关着（`process: true`、`running: false`）时不会启动第二个实例，而是提示在 Preferences → Assistant 打开 “Let AI agents connect”。
+- `preview` 只接受项目根内路径；不提供任意 shell/命令执行。
 
 ## 架构
 
@@ -106,14 +107,15 @@ python3 scripts/solidcraft_gui.py screenshot renders/gui_window.png
 Host 工具
 ├── brief              设计任务书（brief.json，init/read/update/audit）
 ├── calc               带单位工程计算（白名单解析）
-└── report_check       报告结构/措辞/单位/标准引用检查
+├── report_check       报告结构/措辞/单位/标准引用检查
+└── preview            GUI 打开/刷新/截图（路径受限，无 shell）
 
 DSH Agent 预设 "solidcraft"
 ├── persona            中文建模助手行为约束
 ├── mcp-solidcraft     stdio 连接 solidcraft-cli mcp（工具名 mcp__solidcraft__*）
 ├── skill-filesystem   挂载 skills/solidcraft-assistant
 ├── tool-skill         按需加载技能
-├── tool-fs / bash / jobs / todo / ask-user / web / present
+├── tool-fs / fs-search / todo / ask-user / present
 └── compaction         长会话压缩 + 工具结果裁剪
 ```
 
@@ -125,7 +127,7 @@ DSH Agent 预设 "solidcraft"
 
 | 位置 | 作用 |
 |---|---|
-| `cordis.patch.yml` → `args` 的 `--allow-any-path` | 默认不限制路径；可换成 `--allow-path <目录>` 收紧 |
+| `cordis.patch.yml` → `args` 的 `--allow-path` | 默认项目根（`SOLIDCRAFT_WORKSPACE` 或 DSH 启动目录） |
 | `serverName` | 工具名前缀，默认 `solidcraft` |
 | `toolCallTimeoutMs` | 单次 MCP 调用超时，默认 330000（长 fillet/批量建模） |
 | `command` | `solidcraft-cli`，也可写绝对路径 |
@@ -135,15 +137,15 @@ DSH Agent 预设 "solidcraft"
 
 - **新任务看不到预设**：刷新页面；确认 bundle 已安装且 profile 的 `dsh.profile.bundles` 含 `@local/solidcraft-assistant`。
 - **没有 `mcp__solidcraft__*` 工具**：确认 `solidcraft-cli` 在启动 DSH 的 `PATH` 中；查看 DSH 日志里 MCP 启动错误；如果改用了 `--allow-path`，目录必须存在。
-- **保存被拒**：只有收紧了 `--allow-path` 才会发生；把路径放进该目录，或改回 `--allow-any-path`。
-- **GUI 打不开**：检查 `DISPLAY`；读 `renders/solidcraft-gui.log`；无显示环境时用聊天里的 `screenshot`。
-- **窗口反复关闭重开**：不要用 bash 直接跑 `solidcraft`，用 `scripts/solidcraft_gui.py open`（systemd 常驻）。
+- **保存被拒**：把路径放进项目根（`SOLIDCRAFT_WORKSPACE` 或 DSH 启动目录）。
+- **GUI 打不开**：检查 `DISPLAY`；`preview status` 看控制通道；无显示环境时用 `preview screenshot`。
+- **窗口反复关闭重开**：不要用 shell 直接跑 `solidcraft`，用 `preview open`（systemd 常驻）。
 - **标签页越来越多**：只在切换不同模型时才会新开；同一模型 `push` 会原地更新。
 
 ## 已知限制
 
 - 同一预设的所有会话共享一个 MCP 连接与 headless 设计，不要并发修改同一模型。
-- headless 会话在已有特征后无法中途桥接到 GUI，只能用 `push` 展示已保存快照。
+- headless 会话在已有特征后无法中途桥接到 GUI，只能用 `preview push` 展示已保存快照。
 - 更新同一模型的 tab 会重置该 tab 的相机/选中状态（控制通道无 reload）。
 - GUI 预览的持久化依赖 systemd user manager；其它平台退回普通进程，可能被回收。
 - 本项目不是 SolidCraft 官方项目；SolidCraft 是独立的开源 CAD 项目。

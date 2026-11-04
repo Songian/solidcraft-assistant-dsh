@@ -10,6 +10,8 @@
       name: './plugin/tools/calc.js'
     - id: report-check
       name: './plugin/tools/verifier.js'
+    - id: preview
+      name: './plugin/tools/preview.js'
     - id: preset-solidcraft
       name: '@deepseek-ai/dsh-agent-preset'
       config:
@@ -32,7 +34,7 @@
 
                 交付时给中文结论（外形尺寸、体积、关键参数）、嵌入截图，并把设计保存到 designs/、图片保存到 renders/。除非用户另有要求，不要粘贴大段 JSON。
 
-                用户要求打开或刷新 SolidCraft 窗口预览时，按技能里的“打开 GUI 预览”流程执行：能桥接就让建模实时显示在窗口里；不能桥接就保存当前设计，再更新已有的 SolidCraft 窗口。同一个模型修改后只更新它原来的 tab，不要新建 tab；只有新模型才新开 tab。系统中已经有 SolidCraft 实例时，绝不要关闭、杀死或重启它（不要 pkill、job_kill 或重新 launch）。启动窗口只用 scripts/solidcraft_gui.py（它用 systemd 常驻），不要用 bash 直接运行 solidcraft；否则窗口会被回收，看起来像反复关闭重开。没有显示环境时如实说明并改用聊天里的截图。
+                用户要求打开或刷新 SolidCraft 窗口预览时，按技能里的“打开 GUI 预览”流程执行：能桥接就让建模实时显示在窗口里；不能桥接就保存当前设计，再更新已有的 SolidCraft 窗口。同一个模型修改后只更新它原来的 tab，不要新建 tab；只有新模型才新开 tab。系统中已经有 SolidCraft 实例时，绝不要关闭、杀死或重启它（不要 pkill、job_kill 或重新 launch）。打开/刷新窗口只用 Host 工具 `preview`（status/open/push/screenshot）；不要用 shell 直接运行 solidcraft。没有显示环境时如实说明并改用 `preview` 截图。
 
                 用户报告 Solidcraft 崩溃、报错、形状或数值不对时，按 references/bug-report.md 的规范做最小复现，先给用户看报告；未经用户明确同意，绝不提交 issue，也绝不上传用户的设计、截图或文件内容。
           - id: time-context
@@ -47,10 +49,9 @@
                 - mcp
                 - --param-check
                 - warn
-                # The assistant may read and write anywhere the app can. To
-                # tighten it, use --allow-path <folder> instead and keep
-                # designs/ and renders/ inside that folder.
-                - --allow-any-path
+                # Keep the app's file boundary at the project root.
+                - --allow-path
+                - !!js process.env.SOLIDCRAFT_WORKSPACE || process.cwd()
               toolCallTimeoutMs: 330000
               failOnStartupError: true
           - id: skill-filesystem
@@ -68,25 +69,12 @@
             name: '@deepseek-ai/dsh-tool-fs-search'
             config:
               sampleOverCapGlobResults: false
-          - id: tool-bash
-            name: '@deepseek-ai/dsh-tool-bash'
-            disabled: !!js process.platform === 'win32'
-          - id: tool-pwsh
-            name: '@deepseek-ai/dsh-tool-pwsh'
-            disabled: !!js process.platform !== 'win32'
-          - id: tool-jobs
-            name: '@deepseek-ai/dsh-tool-jobs'
           - id: tool-todo
             name: '@deepseek-ai/dsh-tool-todo'
             config:
               allowParallelInProgress: true
           - id: tool-ask-user
             name: '@deepseek-ai/dsh-tool-ask-user'
-          - id: tool-web
-            name: '@deepseek-ai/dsh-tool-web'
-            config:
-              fetch: true
-              searchTimeoutMs: 60000
           - id: present
             name: '@deepseek-ai/dsh-tool-present'
           - id: compaction

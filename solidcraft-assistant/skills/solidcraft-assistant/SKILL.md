@@ -41,7 +41,7 @@ description: Use when the user asks to model, modify, measure, render or export 
 
 ## 3. 展示与交付
 
-- 先 `pwd` 取得当前工作目录的绝对路径。`designs/`、`renders/` 是工作目录下的子目录，必须位于 MCP 的 `--allow-path` 内。
+- 项目根是会话工作目录；`designs/`、`renders/` 位于其下。MCP 只允许项目根内的路径，`preview` 也只接受根内路径。
 - 截图：`screenshot {"source":"model","view":"iso","width":1200,"height":800,"path":"<工作目录>/renders/<name>_iso.png"}`；内部结构补 `"view":"top"` 或剖切。`source:"model"` 避免移动用户相机。
 - 在回复中用 `![说明](绝对路径)` 嵌入截图，文件用 Markdown 链接。
 - 设计保存到 `<工作目录>/designs/<name>.sc`；按需导出 `.step` / `.3mf` / `.stl`。保存/导出/截图都用绝对路径，不要依赖 MCP 服务器的相对路径。
@@ -56,7 +56,7 @@ description: Use when the user asks to model, modify, measure, render or export 
 
 ## 5. GUI 预览
 
-读 `references/gui-preview.md`。铁律：已有窗口只更新原 tab，不 `pkill`/重启；同一模型不开新 tab；无显示环境用 `screenshot`。
+用 `preview` 工具。铁律：已有窗口只更新原 tab，不重启；同一模型不开新 tab；无显示环境用 `preview screenshot`。
 
 ## 6. Bug 与崩溃
 

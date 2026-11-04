@@ -7,11 +7,9 @@
   "exports": {
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg",
-    "./package.json": "./package.json",
-    "./plugin": "./plugin/brief.js"
+    "./package.json": "./package.json"
   },
   "files": [
-    "plugin/**",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",

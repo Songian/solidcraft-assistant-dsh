@@ -4,6 +4,8 @@
 # 没有应用时进入 headless 会话），并只在该预设的作用域内注册工具，
 # 因此其它会话不会看到 solidcraft 工具。
 - insert:
+    - id: preset-debug
+      name: './plugin/preset_debug.js'
     - id: preset-solidcraft
       name: '@deepseek-ai/dsh-agent-preset'
       config:

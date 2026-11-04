@@ -22,7 +22,6 @@
 
 - SolidCraft **0.29+**（`solidcraft`、`solidcraft-cli` 在 `PATH` 中）
 - DSH（测试于 `0.2.1-rc.5`）
-- Python **3.10+**（预览脚本、验证脚本）
 - 桌面环境；GUI 预览在 Linux + systemd user manager 下最稳（无 systemd 时退回普通进程启动）
 - 操作系统：Linux（已在 X11 下实测）；macOS/Windows 可建模与出图，`preview` 的 systemd 路径不适用
 
@@ -127,7 +126,7 @@ DSH Agent 预设 "solidcraft"
 
 | 位置 | 作用 |
 |---|---|
-| `cordis.patch.yml` → `args` 的 `--allow-path` | 默认项目根（`SOLIDCRAFT_WORKSPACE` 或 DSH 启动目录） |
+| `cordis.patch.yml` → `args` 的 `--allow-path` | 必须设置 `SOLIDCRAFT_WORKSPACE`；未设置时 MCP 启动失败（fail-closed） |
 | `serverName` | 工具名前缀，默认 `solidcraft` |
 | `toolCallTimeoutMs` | 单次 MCP 调用超时，默认 330000（长 fillet/批量建模） |
 | `command` | `solidcraft-cli`，也可写绝对路径 |
@@ -137,7 +136,7 @@ DSH Agent 预设 "solidcraft"
 
 - **新任务看不到预设**：刷新页面；确认 bundle 已安装且 profile 的 `dsh.profile.bundles` 含 `@local/solidcraft-assistant`。
 - **没有 `mcp__solidcraft__*` 工具**：确认 `solidcraft-cli` 在启动 DSH 的 `PATH` 中；查看 DSH 日志里 MCP 启动错误；如果改用了 `--allow-path`，目录必须存在。
-- **保存被拒**：把路径放进项目根（`SOLIDCRAFT_WORKSPACE` 或 DSH 启动目录）。
+- **保存被拒**：把路径放进 `SOLIDCRAFT_WORKSPACE` 指向的项目根。
 - **GUI 打不开**：检查 `DISPLAY`；`preview status` 看控制通道；无显示环境时用 `preview screenshot`。
 - **窗口反复关闭重开**：不要用 shell 直接跑 `solidcraft`，用 `preview open`（systemd 常驻）。
 - **标签页越来越多**：只在切换不同模型时才会新开；同一模型 `push` 会原地更新。

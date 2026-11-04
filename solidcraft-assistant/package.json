@@ -15,7 +15,8 @@
     "locale/*.json",
     "icon.svg",
     "skills/**",
-    "knowledge/**"
+    "knowledge/**",
+    "knowledge.lock"
   ],
   "dsh": {
     "bundle": {

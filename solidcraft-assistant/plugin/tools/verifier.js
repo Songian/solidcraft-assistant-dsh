@@ -101,7 +101,7 @@ export function checkReport(text) {
         errors.push(`standard citation is not verified: ${standard}`)
       }
     } else if (/^(GB|ISO)/i.test(standard)) {
-      warnings.push(`standard citation not found in the knowledge subset: ${standard}`)
+      errors.push(`standard citation not found in the knowledge subset: ${standard}`)
     } else {
       citations.push({ standard, profile: 'external', status: 'unknown' })
     }

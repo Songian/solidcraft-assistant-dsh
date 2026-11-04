@@ -51,7 +51,7 @@
                 - warn
                 # Keep the app's file boundary at the project root.
                 - --allow-path
-                - !!js process.env.SOLIDCRAFT_WORKSPACE || process.cwd()
+                - !!js (() => { const root = process.env.SOLIDCRAFT_WORKSPACE; if (!root) throw new Error('SOLIDCRAFT_WORKSPACE is required; export it to the project root before launching DSH'); return root })()
               toolCallTimeoutMs: 330000
               failOnStartupError: true
           - id: skill-filesystem

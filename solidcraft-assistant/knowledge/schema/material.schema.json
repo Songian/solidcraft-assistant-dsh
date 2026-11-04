@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SolidCraft material knowledge subset",
+  "type": "object",
+  "required": ["schema", "kind", "entries"],
+  "properties": {
+    "schema": {"const": "knowledge/1"},
+    "kind": {"const": "material"},
+    "entries": {"type": "array", "items": {"type": "object", "required": ["id", "name", "verification"]}}
+  }
+}

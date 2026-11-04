@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SolidCraft standard knowledge subset",
+  "type": "object",
+  "required": ["schema", "id", "rules"],
+  "properties": {
+    "schema": {"const": "solidcraft-standard/1"},
+    "id": {"type": "string"},
+    "projection": {"enum": ["first-angle", "third-angle", "unspecified"]},
+    "units": {"type": "string"},
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "topic", "standard", "verification"],
+        "properties": {
+          "verification": {
+            "type": "object",
+            "required": ["status"],
+            "properties": {"status": {"enum": ["unverified", "verified", "deprecated"]}}
+          }
+        }
+      }
+    }
+  }
+}

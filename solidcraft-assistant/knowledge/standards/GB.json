@@ -1,0 +1,90 @@
+{
+  "schema": "solidcraft-standard/1",
+  "id": "GB",
+  "name": "GB/T 机械制图（0.0.1 知识子集）",
+  "language": "zh-CN",
+  "projection": "first-angle",
+  "units": "mm",
+  "rules": [
+    {
+      "id": "GB.TOL.LINEAR.M",
+      "topic": "general-linear-tolerance",
+      "standard": "GB/T 1804",
+      "edition": "2000",
+      "class": "m",
+      "ranges": [[0.5, 3, 0.1], [3, 6, 0.1], [6, 30, 0.2], [30, 120, 0.3], [120, 400, 0.5], [400, 1000, 0.8], [1000, 2000, 1.2], [2000, 4000, 2.0]],
+      "closed": "right",
+      "alignment": "eqv",
+      "verification": {"status": "unverified", "checkedBy": null, "checkedAt": null, "locator": "表1", "contentHash": null},
+      "notes": ["P3 需对照官方目录核对 edition/表号/分档；未 verified 前不得作为报告依据"]
+    },
+    {
+      "id": "GB.TOL.ANGULAR.M",
+      "topic": "general-angular-tolerance",
+      "standard": "GB/T 1804",
+      "edition": "2000",
+      "class": "m",
+      "ranges": [[0, 10, 1.0], [10, 50, 0.5], [50, 120, 0.3333], [120, 400, 0.1667], [400, 1000000, 0.0833]],
+      "closed": "right",
+      "unit": "deg",
+      "alignment": "eqv",
+      "verification": {"status": "unverified", "checkedBy": null, "checkedAt": null, "locator": "表2", "contentHash": null},
+      "notes": ["较短边长度分档；P3 核对"]
+    },
+    {
+      "id": "GB.HOLE.CLEARANCE.M",
+      "topic": "clearance-hole",
+      "standard": "GB/T 5277",
+      "edition": "1985",
+      "series": "medium",
+      "values": [{"thread": "M3", "diameter_mm": 3.4}, {"thread": "M4", "diameter_mm": 4.5}, {"thread": "M5", "diameter_mm": 5.5}, {"thread": "M6", "diameter_mm": 6.6}, {"thread": "M8", "diameter_mm": 9.0}, {"thread": "M10", "diameter_mm": 11.0}],
+      "alignment": "eqv",
+      "verification": {"status": "unverified", "checkedBy": null, "checkedAt": null, "locator": "表1", "contentHash": null},
+      "notes": ["P3 核对；仅常用 M3–M10 中系列"]
+    },
+    {
+      "id": "GB.HOLE.CBORE.M3",
+      "topic": "counterbore",
+      "standard": "GB/T 152.3",
+      "edition": "1988",
+      "values": [{"thread": "M3", "cb_diameter_mm": 6.5, "cb_depth_mm": 3.3}],
+      "alignment": "n/a",
+      "verification": {"status": "unverified", "checkedBy": null, "checkedAt": null, "locator": "待核", "contentHash": null},
+      "notes": ["数值来自本项目 plate.sc 的建模参数；与标准的对应关系未核实，P3 核对"]
+    },
+    {
+      "id": "GB.EDGE.FILLET.CHAMFER",
+      "topic": "fillet-chamfer-series",
+      "standard": "GB/T 6403.4",
+      "edition": "2008",
+      "series": [0.2, 0.3, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0, 12.0, 16.0, 20.0],
+      "unit": "mm",
+      "verification": {"status": "unverified", "checkedBy": null, "checkedAt": null, "locator": "待核", "contentHash": null},
+      "notes": ["P3 核对优先系列；实际值按功能/工艺确定"]
+    },
+    {
+      "id": "GB.SURFACE.RA",
+      "topic": "surface-roughness-ra",
+      "standard": "GB/T 1031",
+      "edition": "2009",
+      "series": [0.012, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.3, 12.5, 25.0, 50.0, 100.0],
+      "unit": "um",
+      "verification": {"status": "unverified", "checkedBy": null, "checkedAt": null, "locator": "表1", "contentHash": null},
+      "notes": ["Ra 优先系列；GB/T 131-2006 为标注符体系；P3 核对版本关系"]
+    }
+  ],
+  "terminology": [
+    {"zh": "沉孔", "en": "counterbore", "note": "圆柱形沉孔，常用沉头螺钉头"},
+    {"zh": "沉头孔", "en": "countersink", "note": "圆锥形锪孔，与沉孔不是同一几何"},
+    {"zh": "倒圆", "en": "fillet"},
+    {"zh": "倒角", "en": "chamfer"},
+    {"zh": "基准", "en": "datum"},
+    {"zh": "未注公差", "en": "general tolerance"}
+  ],
+  "constraints": [
+    "未注线性/角度公差按选定等级（默认 m）解释，必须先声明标准与等级",
+    "报告中引用标准必须带标准号、版本/年份、等级或表号",
+    "钣金、增材、铸件不得直接套用 GB/T 1804 的机加工分档；需在 scope.excludes 中声明",
+    "投影为第一角；图面需有投影符号（若未来输出图纸）"
+  ]
+}

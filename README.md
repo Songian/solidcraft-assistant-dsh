@@ -15,6 +15,7 @@
 - **设计任务书（brief）**：Host 工具 `brief` 提供 `init / read / update / audit`，在项目根维护 `brief.json`（schema、revision、参数、需求、产物路径）；`audit` 接收 `measure`/`topology`，报告体积偏差、未映射需求与路径违规。
 - **工程计算（calc）**：Host 工具 `calc` 支持带单位的表达式（mm/cm/m/in/ft、deg/rad、g/kg、s），白名单解析，无 `eval`；返回数值、单位、量纲与展示文本。
 - **报告检查（report_check）**：Host 工具 `report_check` 检查报告结构（结论/假设/计算/校核/未决）、口语化/伪专业措辞、无单位数值、标准引用是否带版本；错误阻断，警告提示。
+- **GB/ISO 知识子集**：`knowledge/standards/{GB,ISO}.json` 与 Skill references 保存公差/通孔/沉孔/倒圆/Ra 的数值分档；当前全部 `unverified`，P3 逐条核对官方目录后才可作为合规依据。
 - **作用域隔离**：MCP 工具只在“Solidcraft 建模助手”预设内注册，其它会话看不到。当前 `brief`/`calc`/`report_check` 为 Host 级全局工具，后续收窄到该预设。
 
 ## 环境要求

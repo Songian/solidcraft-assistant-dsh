@@ -5,7 +5,7 @@
 # 因此其它会话不会看到 solidcraft 工具。
 - insert:
     - id: brief
-      name: './plugin/index.js'
+      name: './plugin/brief.js'
     - id: preset-solidcraft
       name: '@deepseek-ai/dsh-agent-preset'
       config:

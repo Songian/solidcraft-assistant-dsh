@@ -7,7 +7,11 @@
   "exports": {
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./tools/brief": "./plugin/tools/brief.js",
+    "./tools/calc": "./plugin/tools/calc.js",
+    "./tools/verifier": "./plugin/tools/verifier.js",
+    "./tools/preview": "./plugin/tools/preview.js"
   },
   "files": [
     "plugin/**",

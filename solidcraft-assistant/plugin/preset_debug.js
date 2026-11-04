@@ -5,6 +5,6 @@ export function apply(ctx) {
     description: 'List agent presets with broken diagnostics.',
     parameters: { type: 'object', properties: {}, additionalProperties: false },
     output: { schema: { type: 'object' }, render: (_a, v) => [{ type: 'text', text: JSON.stringify(v, null, 2) }] },
-    async execute() { return await ctx.agentPresets.list() },
+    async execute() { return { presets: await ctx.agentPresets.list() } },
   })
 }

@@ -12,7 +12,8 @@
     "./tools/calc": "./plugin/tools/calc.js",
     "./tools/verifier": "./plugin/tools/verifier.js",
     "./tools/preview": "./plugin/tools/preview.js",
-    "./mcp/bridge": "./plugin/solidcraft_bridge.js"
+    "./mcp/bridge": "./plugin/solidcraft_bridge.js",
+    "./tools/sketch": "./plugin/tools/sketch.js"
   },
   "files": [
     "plugin/**",

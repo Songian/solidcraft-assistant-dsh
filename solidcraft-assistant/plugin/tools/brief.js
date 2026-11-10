@@ -18,9 +18,9 @@ const REGISTRY_HASH = readHash(['../../knowledge/constraints/registry.json', '..
 const SKILL_VERSION = '0.0.1'
 const TOP_KEYS = new Set([
   'schema', 'project', 'revision', 'intent', 'requirements', 'intent_parameters',
-  'checkpoints', 'artifacts', 'standard_refs', 'actual', 'updated',
+  'checkpoints', 'sketch', 'artifacts', 'standard_refs', 'actual', 'updated',
 ])
-const DEEP_KEYS = new Set(['intent', 'artifacts', 'actual'])
+const DEEP_KEYS = new Set(['intent', 'artifacts', 'actual', 'sketch'])
 const ARRAY_KEYS = new Set(['requirements', 'intent_parameters', 'checkpoints', 'standard_refs'])
 
 function now() {
@@ -42,6 +42,7 @@ function defaultBrief(project) {
     requirements: [],
     intent_parameters: [],
     checkpoints: [],
+    sketch: null,
     artifacts: { design: '', renders: [] },
     standard_refs: [],
     actual: null,

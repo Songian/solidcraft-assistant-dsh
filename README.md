@@ -12,7 +12,8 @@
 - **专属技能**：`solidcraft-assistant` 技能覆盖会话流程、参数化规则、验证标准、交付格式和 GUI 预览。
 - **Bug 报告规范**：按 SolidCraft 官方的 `solidcraft-reporting` 流程：全新设计最小复现 → 缩小脚本 → 数字核对 → 搜索已有 issue → 用户同意后才提交。
 - **GUI 预览**：自动发现并复用已运行的 SolidCraft 实例；同一模型修改后**更新原 tab**，只有新模型才新开 tab；绝不反复关闭/重启窗口。
-- **设计任务书（brief）**：预设工具 `brief` 提供 `init / read / update / audit`，在项目根维护 `brief.json`（schema、revision、参数、需求、产物路径）；`audit` 接收 `measure`/`topology`，报告体积偏差、未映射需求与路径违规。
+- **设计任务书（brief）**：预设工具 `brief` 提供 `init / read / update / audit`，在项目根维护 `brief.json`（schema、revision、参数、需求、产物路径、sketch）；`audit` 接收 `measure`/`topology`，报告体积偏差、未映射需求与路径违规。
+- **草图输入协议（sketch）**：从草图开始时按参考面 → 起点 → 图样 → 绘制方法 → 闭合确认；开口图样（直线/圆弧）必须显式选择是否闭合，`sketch` 工具校验后才执行 `batch`。
 - **工程计算（calc）**：预设工具 `calc` 支持带单位的表达式（mm/cm/m/in/ft、deg/rad、g/kg、s），白名单解析，无 `eval`；返回数值、单位、量纲与展示文本。
 - **报告检查（report_check）**：预设工具 `report_check` 检查报告结构（结论/假设/计算/校核/未决）、口语化/伪专业措辞、无单位数值、标准引用是否带版本；错误阻断，警告提示。
 - **GB/ISO 知识子集**：`knowledge/standards/{GB,ISO}.json` 与 Skill references 保存公差/通孔/倒圆/Ra 的数值分档；当前全部 `unverified`，发布前逐条核对官方目录后才可作为合规依据。
@@ -107,6 +108,7 @@ preview {"op":"screenshot","design":"renders/gui_window.png"}
 ├── brief              设计任务书（brief.json，init/read/update/audit）
 ├── calc               带单位工程计算（白名单解析）
 ├── report_check       报告结构/措辞/单位/标准引用检查
+├── sketch             草图输入协议校验（参考面/起点/图样/方法/闭合）
 └── preview            GUI 打开/刷新/截图（路径受限，无 shell）
 
 DSH Agent 预设 "solidcraft"

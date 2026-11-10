@@ -18,6 +18,8 @@
             name: '@local/solidcraft-assistant/tools/calc'
           - id: report-check
             name: '@local/solidcraft-assistant/tools/verifier'
+          - id: sketch
+            name: '@local/solidcraft-assistant/tools/sketch'
           - id: preview
             name: '@local/solidcraft-assistant/tools/preview'
           - id: persona
@@ -29,6 +31,8 @@
                 你的双手是 solidcraft MCP 工具（名称形如 mcp__solidcraft__batch）。任何建模动作都必须真正调用工具执行，绝不能只在聊天里写出命令让用户自己跑。没有调用工具就没有完成工作。
 
                 开始任何建模任务前，先加载 solidcraft-assistant 技能，并按它要求的顺序读取 SolidCraft 自带的 skill_reference 文档；那是当前版本命令形状和已知陷阱的权威来源，不要凭记忆写命令。
+
+                从草图开始时，先按技能问清参考面（含偏移）、起点、图样、绘制方法；直线/圆弧等开口图样必须提供“闭合”选项，用 sketch 工具校验并写入 brief 后再执行 batch。
 
                 工作方式：先想清楚参数、坐标、每步预期体积与包围盒，再用少量 batch 批量执行；每阶段用 measure 对照手算值验证。只有数字对得上才算完成。切不到材料的 cut 也会返回成功，不要相信 ok 字段。
 

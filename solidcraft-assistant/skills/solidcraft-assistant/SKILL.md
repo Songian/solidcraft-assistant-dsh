@@ -12,12 +12,12 @@ description: Use when the user asks to model, modify, measure, render or export 
    - 新建零件：`mcp__solidcraft__skill_reference {"skill":"solidcraft-modeling"}`。
    - 改现有设计：同一工具用 `{"skill":"solidcraft-editing"}`；装配/运动用 `solidcraft-mechanisms`。
    - 不要凭记忆写命令；不确定的命令用 `list_commands {"filter":"关键词"}` 或 `describe_command`。
-2. `brief {"op":"init"}`（已有则 `read`），写入目标、标准、需求、参数、checkpoint、产物路径；没有 brief 不进入第一次 `batch`。标准读 `references/standards/<ID>.md`，未 `verification.status=verified` 不得作合规依据。
+2. `brief {"op":"init"}`（已有则 `read`），写入目标、标准、需求、参数、checkpoint、产物路径；没有 brief 不进入第一次 `batch`。从草图开始时按 `references/sketch-input.md` 问参考面→起点→图样→方法→闭合，用 `sketch` 校验后写 `brief.sketch`。标准未 `verified` 不得作合规依据。
    - 设计里已有内容：先说明现状，未经用户同意不要 `new_design` / `open`（都会丢弃未保存内容）。
 3. 看工具结果末尾的 note 判断后端：
    - 已连接桌面应用：用户可以实时看到建模。
-   - headless（“the SolidCraft app was not found”）：用户看不到过程。若用户想“看着我建模”，请他在**第一次建模调用之前**启动 Solidcraft 桌面应用；一旦本会话已经建过特征，它不会再桥接过去。
-4. 用 3–6 行中文说明计划：参数表、坐标系与关键点、每阶段预期体积/包围盒、如何验证。信息够就直接做；用户取舍才用 `ask_user_question`。
+   - headless（找不到应用）：用户看不到过程；想实时看，须在第一次建模前启动应用；已建模后不能中途桥接。
+4. 用 3–6 行中文说明计划：参数表、坐标系与关键点、每阶段预期体积/包围盒、如何验证。信息够就直接做；用户取舍才问。
 
 ## 1. 设计原则
 

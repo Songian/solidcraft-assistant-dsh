@@ -19,7 +19,7 @@ const base = {
   design_mode_reason: 'fixed profile',
   design_mode_history: [{ mode: 'geometry-first', reason: 'fixed profile' }],
   revision: 1,
-  sketch: { plane: { type: 'XY' }, start: [0, 0], pattern: 'rectangle', method: 'two_point', closed: true, command: 'sketch.rectangle.two_point' },
+  sketch: { flow: 'parametric', plane: { type: 'XY' }, start: [0, 0], pattern: 'rectangle', method: 'two_point', closed: true, command: 'sketch.rectangle.two_point' },
   requirements: [{ id: 'R1', verify: { tool: 'measure', predicate: 'bbox' } }],
   checkpoints: [{ after: 'base', expected: { volume_mm3: 12000 }, tol: { abs: 1 }, minFeatureMm3: 32.19 }],
   artifacts: { design: 'designs/plate.sc', renders: [] },

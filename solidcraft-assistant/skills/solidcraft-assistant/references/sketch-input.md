@@ -1,6 +1,6 @@
 # 草图输入协议
 
-从草图开始建模时，按顺序确认；**未确认完不执行第一次 `batch`**。
+从草图开始建模时，先声明 `flow`：`feature-description`（多轮量化）或 `parametric`（直接给参数/图样/方法）。再按顺序确认；**未确认完不执行第一次 `batch`**。
 
 1. **参考面**：XY（Z=0）、XZ（Y=0 + offset）、YZ（X=0 + offset）、已有构造面、实体平面。
    - XZ 且 Y=15 → `{"type":"XZ","offset":15}`。

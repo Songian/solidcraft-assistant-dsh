@@ -9,6 +9,12 @@
 3. 同时命中时按 1；不明确时默认 2，并在 `brief.design_mode_reason` 写理由。
 4. 中途可切换；切换必须追加 `design_mode_history`，保留已确认特征/参数，并对保留几何重新 `sketch` 校验、`measure`、`brief audit`。
 
+## 草图子流程
+
+- `feature-description`：草图对应功能/特征，先多轮量化（位置、数量、尺寸、约束），再落图；每轮刷新同一预览。
+- `parametric`：直接给参考面、起点、图样、方法、尺寸/表达式和约束；助手只补缺项。
+- 两者最终都写同一 `sketch` 结构，`sketch.flow` 记录子流程；`parametric` 不取消开口图样闭合确认。
+
 ## 特征驱动
 
 F1 功能/特征意图 → F2 拓扑/位置/数量 → F3 约束/基准 → F4 参数与表达式 → F5 草图协议 → build → measure → verify。
@@ -20,6 +26,8 @@ F1 功能/特征意图 → F2 拓扑/位置/数量 → F3 约束/基准 → F4 �
 ## 几何驱动
 
 G1 参考面 → G2 起点（默认 [0,0]）→ G3 图样/方法 → G4 开口图样闭合 → G5 参数/特征 → sketch 校验 → brief.sketch → build → measure → verify。
+
+草图子流程见上；`sketch.flow` ∈ {feature-description, parametric}。
 
 参考面语法：`XY Z=offset`、`XZ Y=offset`、`YZ X=offset`；offset 单位 mm、默认 0、沿面法向正方向。构造面 offset 沿其法向；实体面取支撑面，显式 offset 不一致时须确认。
 

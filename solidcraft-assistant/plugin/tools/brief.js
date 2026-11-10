@@ -109,6 +109,7 @@ function measureVolume(measure) {
 
 function validSketch(sketch) {
   if (!sketch || typeof sketch !== 'object' || Array.isArray(sketch)) return false
+  if (!['feature-description', 'parametric'].includes(sketch.flow)) return false
   const plane = sketch.plane
   if (!plane || !['XY', 'XZ', 'YZ', 'construction', 'face'].includes(plane.type)) return false
   if (plane.type === 'face') {

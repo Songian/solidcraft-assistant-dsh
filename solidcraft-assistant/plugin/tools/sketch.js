@@ -2,6 +2,7 @@
 export const inject = ['tools']
 
 const PLANES = ['XY', 'XZ', 'YZ', 'construction', 'face']
+const FLOWS = ['feature-description', 'parametric']
 const PATTERNS = {
   line: {
     open: true,
@@ -46,6 +47,7 @@ function finitePair(value) {
 function validatePlan(input = {}) {
   const errors = []
   const missing = []
+  if (!FLOWS.includes(input.flow)) errors.push(`flow must be one of ${FLOWS.join(', ')}`)
   const plane = input.plane || { type: 'XY', offset: 0 }
   if (!PLANES.includes(plane.type)) errors.push(`plane.type must be one of ${PLANES.join(', ')}`)
   if (plane.type === 'construction' && !plane.name) errors.push('construction plane requires name')
@@ -75,6 +77,7 @@ function validatePlan(input = {}) {
     missing,
     next: missing[0] || null,
     plan: ok ? {
+      flow: input.flow,
       plane: { type: plane.type, offset: plane.offset ?? 0, ...(plane.name ? { name: plane.name } : {}), ...(plane.point ? { point: plane.point } : {}), ...(plane.face ? { face: plane.face } : {}) },
       start,
       pattern: input.pattern,
@@ -86,9 +89,15 @@ function validatePlan(input = {}) {
   }
 }
 
-function guide() {
+function guide(flow) {
   return {
+    flows: {
+      'feature-description': '多轮对话量化功能/特征，逐步形成草图；每轮刷新同一预览。',
+      parametric: '直接给出具体参考面、起点、图样、方法、尺寸和约束。',
+    },
+    flow: flow || null,
     steps: [
+      ...(flow === 'feature-description' ? [{ id: 'feature', question: '这个草图对应哪些功能/特征？' }, { id: 'quantify', question: '把特征量化：位置、数量、尺寸、约束' }] : []),
       { id: 'plane', question: '选择草图参考面', options: [
         { value: 'XY', label: 'XY 面，Z=0' },
         { value: 'XZ', label: 'XZ 面，Y=0' },
@@ -114,6 +123,7 @@ export function apply(ctx) {
       type: 'object',
       properties: {
         op: { type: 'string', enum: ['guide', 'validate'] },
+        flow: { type: 'string', enum: FLOWS },
         plane: {
           type: 'object',
           properties: {
@@ -136,7 +146,7 @@ export function apply(ctx) {
     },
     output: { schema: { type: 'object' }, render: (_args, value) => [{ type: 'text', text: JSON.stringify(value, null, 2) }] },
     async execute(args) {
-      if (args.op === 'guide') return guide()
+      if (args.op === 'guide') return guide(args.flow)
       return validatePlan(args)
     },
   })

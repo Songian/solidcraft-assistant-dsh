@@ -14,7 +14,7 @@
 - **GUI 预览**：自动发现并复用已运行的 SolidCraft 实例；同一模型修改后**更新原 tab**，只有新模型才新开 tab；绝不反复关闭/重启窗口。
 - **设计任务书（brief）**：预设工具 `brief` 提供 `init / read / update / audit`，在项目根维护 `brief.json`（schema、revision、参数、需求、产物路径、sketch）；`audit` 接收 `measure`/`topology`，报告体积偏差、未映射需求与路径违规。
 - **草图输入协议（sketch）**：从草图开始时按参考面 → 起点 → 图样 → 绘制方法 → 闭合确认；开口图样（直线/圆弧）必须显式选择是否闭合，`sketch` 工具校验后才执行 `batch`。
-- **会话锚点（focus）**：每轮读 `brief.focus` 复述目标/阶段/当前问题，结束写回决策与未决项；压缩或恢复后从 brief 重建，不靠聊天记忆。
+- **会话锚点（focus）**：每轮读 `brief.focus` 复述目标/阶段/当前问题；回复开头明确“本轮目标”并写入 `turn_goal`，结束写回结果/下一步；压缩或恢复后从 brief 重建。
 - **两种建模入口**：`feature-first`（描述功能/特征，多轮细化并更新同一预览）与 `geometry-first`（直接给几何/尺寸）；入口写入 `brief.design_mode`，两种入口都必须经过草图协议。
 - **工程计算（calc）**：预设工具 `calc` 支持带单位的表达式（mm/cm/m/in/ft、deg/rad、g/kg、s），白名单解析，无 `eval`；返回数值、单位、量纲与展示文本。
 - **报告检查（report_check）**：预设工具 `report_check` 检查报告结构（结论/假设/计算/校核/未决）、口语化/伪专业措辞、无单位数值、标准引用是否带版本；错误阻断，警告提示。

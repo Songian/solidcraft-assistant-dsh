@@ -50,6 +50,9 @@ function defaultBrief(project) {
     sketch: null,
     focus: {
       goal: '',
+      turn_goal: '',
+      turn_result: null,
+      next_action: null,
       stage: 'intake',
       current_question: '',
       decisions: [],

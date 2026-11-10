@@ -66,12 +66,17 @@ test('audit requires design_mode and a valid sketch', () => {
   const root = fixture()
   writeFileSync(join(root, 'renders'), '')
   const plan = { ...base, artifacts: { design: 'designs/plate.sc', renders: [] } }
-  const missing = auditBrief({ ...plan, design_mode: null, sketch: null }, root, { total: { volume_mm3: 12000.5 } })
-  assert.equal(missing.verdict, 'unverifiable')
-  assert.equal(missing.gate.designMode, false)
-  assert.equal(missing.gate.sketch, false)
-  const incomplete = auditBrief({ ...plan, sketch: { plane: { type: 'XY' }, pattern: 'line' } }, root, { total: { volume_mm3: 12000.5 } })
+  const noMode = auditBrief({ ...plan, design_mode: null }, root, { total: { volume_mm3: 12000.5 } })
+  assert.equal(noMode.verdict, 'unverifiable')
+  assert.equal(noMode.gate.designMode, false)
+  assert.equal(noMode.gate.sketch, true)
+  const noSketch = auditBrief({ ...plan, sketch: null }, root, { total: { volume_mm3: 12000.5 } })
+  assert.equal(noSketch.verdict, 'unverifiable')
+  assert.equal(noSketch.gate.sketch, false)
+  assert.equal(noSketch.gate.designMode, true)
+  const incomplete = auditBrief({ ...plan, sketch: { ...plan.sketch, method: undefined } }, root, { total: { volume_mm3: 12000.5 } })
   assert.equal(incomplete.verdict, 'unverifiable')
+  assert.equal(incomplete.gate.sketch, false)
   rmSync(root, { recursive: true, force: true })
 })
 
@@ -80,5 +85,15 @@ test('declared relative tolerance alone is unverifiable', () => {
   const result = auditBrief({ ...base, checkpoints: [{ after: 'base', expected: { volume_mm3: 12000 }, tol: { rel: 0.5 } }] }, root, { total: { volume_mm3: 12000.5 } })
   assert.equal(result.volume.status, 'unverifiable')
   assert.equal(result.verdict, 'unverifiable')
+  rmSync(root, { recursive: true, force: true })
+})
+
+
+test('no-sketch direct-feature path requires an explicit reason', () => {
+  const root = fixture()
+  const exempt = auditBrief({ ...base, sketch: null, intent: { sketch_required: false, no_sketch_reason: 'imported body' } }, root, { total: { volume_mm3: 12000.5 } })
+  assert.equal(exempt.gate.sketch, true)
+  const missing = auditBrief({ ...base, sketch: null, intent: { sketch_required: false } }, root, { total: { volume_mm3: 12000.5 } })
+  assert.equal(missing.gate.sketch, false)
   rmSync(root, { recursive: true, force: true })
 })

@@ -16,7 +16,7 @@ description: Use when the user asks to model, modify, measure, render or export 
    - 设计里已有内容：先说明现状，未经用户同意不要 `new_design` / `open`（都会丢弃未保存内容）。
 3. 看 note 判断后端：
    - 有桌面应用：用户实时看到建模；headless：看不到。想实时看须在第一次建模前启动应用；已建模后不能中途桥接。
-4. 用 3–6 行中文说明计划：参数表、坐标系与关键点、每阶段预期体积/包围盒、如何验证。信息够就直接做；材料/公差/关键尺寸取舍才问。
+4. 用 3–6 行中文说明计划：参数、坐标系、关键点、预期体积/包围盒、验证。信息够就做；取舍才问。
 
 ## 1. 设计原则
 
@@ -31,7 +31,7 @@ description: Use when the user asks to model, modify, measure, render or export 
 
 ## 2. 验证（完成前必须做）
 
-1. 每阶段 `measure {"summary":true}`，把结果传给 `brief {"op":"audit","measure":...}`；对比 brief checkpoint 的 `tol.abs`/`tol.rel`。**不得使用固定的 0.2%/0.05 mm**：容差由 checkpoint 或最小关键特征决定。
+1. 每阶段 `measure {"summary":true}`，把结果传给 `brief {"op":"audit","measure":...}`；对比 checkpoint 的 `tol.abs` 与 `minFeatureMm3/2`（体积 mm³）。**不得固定 0.2%/0.05 mm**；缺 `minFeatureMm3` 即 unverifiable。
 2. 位置无法由体积判断：孔/凸台用 `body_topology {"body":"Body1","faces":"cylinders"}` 看 `origin/axis/radius`，把 topology 传给 `brief audit`；对称件用 top 视图截图核对。
 3. 参数是否真的驱动模型：`check_parameters {"set":{"L":"140 mm"}}`（会还原），看 `errors`、体积和圆柱轴变化。
 4. `inspect_design {"measure":false,"sketches":false}` 确认时间线无 `error`。

@@ -21,7 +21,7 @@ test('K3: skill/references have no live shell/web commands', () => {
   const hits = []
   for (const file of FILES) {
     const url = new URL(file, import.meta.url)
-    if (!existsSync(url)) continue
+    assert.ok(existsSync(url), `${file} is missing`)
     const text = readFileSync(url, 'utf8')
     text.split(/\r?\n/).forEach((line, index) => {
       const match = FORBIDDEN.exec(line)

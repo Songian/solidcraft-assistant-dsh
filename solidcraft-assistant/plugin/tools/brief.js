@@ -17,11 +17,11 @@ const KNOWLEDGE_HASH = readHash(['../../knowledge.lock', '../knowledge.lock'])
 const REGISTRY_HASH = readHash(['../../knowledge/constraints/registry.json', '../knowledge/constraints/registry.json'])
 const SKILL_VERSION = '0.0.1'
 const TOP_KEYS = new Set([
-  'schema', 'project', 'design_mode', 'design_mode_reason', 'design_mode_history', 'revision', 'intent', 'requirements', 'intent_parameters',
+  'schema', 'project', 'design_mode', 'design_mode_reason', 'revision', 'intent', 'requirements', 'intent_parameters',
   'checkpoints', 'sketch', 'artifacts', 'standard_refs', 'actual', 'updated',
 ])
 const DEEP_KEYS = new Set(['intent', 'artifacts', 'actual', 'sketch'])
-const ARRAY_KEYS = new Set(['requirements', 'intent_parameters', 'checkpoints', 'standard_refs', 'design_mode_history'])
+const ARRAY_KEYS = new Set(['requirements', 'intent_parameters', 'checkpoints', 'standard_refs'])
 
 function now() {
   return new Date().toISOString()
@@ -41,6 +41,8 @@ function defaultBrief(project) {
       units: { length: 'mm', angle: 'deg' },
       assumptions: [],
       open_questions: [],
+      sketch_required: true,
+      no_sketch_reason: null,
     },
     requirements: [],
     intent_parameters: [],
@@ -109,7 +111,11 @@ function validSketch(sketch) {
   if (!sketch || typeof sketch !== 'object' || Array.isArray(sketch)) return false
   const plane = sketch.plane
   if (!plane || !['XY', 'XZ', 'YZ', 'construction', 'face'].includes(plane.type)) return false
-  if (plane.type === 'face' && !Array.isArray(plane.point) && !Array.isArray(plane.face)) return false
+  if (plane.type === 'face') {
+    const point = Array.isArray(plane.point) && plane.point.length === 3 && plane.point.every((n) => typeof n === 'number' && Number.isFinite(n))
+    const face = Array.isArray(plane.face) && plane.face.length > 0
+    if (!point && !face) return false
+  }
   if (!['line', 'circle', 'arc', 'rectangle'].includes(sketch.pattern)) return false
   if (typeof sketch.method !== 'string' || !sketch.method) return false
   if (typeof sketch.closed !== 'boolean') return false
@@ -146,7 +152,6 @@ export function auditBrief(data, root, measure, topology, stage = null) {
     const abs = Math.abs(measured - expected)
     const rel = expected === 0 ? null : abs / Math.abs(expected)
     const declaredAbs = typeof tol.abs === 'number' ? tol.abs : null
-    const declaredRel = typeof tol.rel === 'number' ? tol.rel : null
     let allowedAbs = null
     let allowedRel = null
     if (typeof minFeature === 'number' && Number.isFinite(minFeature) && minFeature > 0) {
@@ -207,9 +212,11 @@ export function auditBrief(data, root, measure, topology, stage = null) {
   }
 
   const designMode = ['feature-first', 'geometry-first'].includes(data.design_mode)
-  const sketch = validSketch(data.sketch)
+  const sketchRequired = data.intent?.sketch_required !== false
+  const sketch = validSketch(data.sketch) || (!sketchRequired && typeof data.intent?.no_sketch_reason === 'string' && data.intent.no_sketch_reason.trim() !== '')
   if (!designMode) warnings.push('design_mode is not set (feature-first or geometry-first)')
   if (!sketch) warnings.push('sketch plan is missing or incomplete; run sketch validate and write brief.sketch')
+  if (!sketchRequired && !sketch) warnings.push('sketch_required=false requires intent.no_sketch_reason')
   const gate = {
     designMode,
     sketch,
@@ -298,7 +305,13 @@ export function apply(ctx) {
       if (args.op === 'update') {
         validatePatch(args.patch)
         const data = readBrief(file)
+        const nextMode = args.patch.design_mode === undefined ? data.design_mode : args.patch.design_mode
+        const nextReason = args.patch.design_mode_reason === undefined ? data.design_mode_reason : args.patch.design_mode_reason
+        if (nextMode !== null && (typeof nextReason !== 'string' || nextReason.trim() === '')) {
+          throw new Error('design_mode requires design_mode_reason')
+        }
         const next = { ...data }
+        if (args.patch.design_mode_history !== undefined) throw new Error('design_mode_history is managed by the tool')
         if (args.patch.design_mode && args.patch.design_mode !== data.design_mode) {
           next.design_mode_history = [
             ...(Array.isArray(data.design_mode_history) ? data.design_mode_history : []),

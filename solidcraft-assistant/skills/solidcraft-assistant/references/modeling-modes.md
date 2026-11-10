@@ -21,7 +21,7 @@ F1 功能/特征意图 → F2 拓扑/位置/数量 → F3 约束/基准 → F4 �
 
 G1 参考面 → G2 起点（默认 [0,0]）→ G3 图样/方法 → G4 开口图样闭合 → G5 参数/特征 → sketch 校验 → brief.sketch → build → measure → verify。
 
-参考面语法：`XY Z=offset`、`XZ Y=offset`、`YZ X=offset`，offset 默认 0；构造面 offset 沿面法向，实体面取其支撑面且不再偏移。
+参考面语法：`XY Z=offset`、`XZ Y=offset`、`YZ X=offset`；offset 单位 mm、默认 0、沿面法向正方向。构造面 offset 沿其法向；实体面取支撑面，显式 offset 不一致时须确认。
 
 ## 不变量
 
@@ -30,6 +30,6 @@ G1 参考面 → G2 起点（默认 [0,0]）→ G3 图样/方法 → G4 开口�
 3. `brief audit` 需要 `design_mode` 与有效 `sketch`；artifacts 未保存时只能 `unverifiable`。
 4. 同一模型只更新原预览 tab；不重启窗口。
 5. 数值用 calc 复算；交付前 report_check；未 verified 标准不得作合规依据。
-6. checkpoint 容差由 `tol.abs` 与 `minFeatureMm3/2` 共同约束，缺 `minFeatureMm3` 即 `unverifiable`；不得使用固定 0.2%。
+6. checkpoint 的 `tol.abs` 是体积 mm³；有效容差 = `min(tol.abs, minFeatureMm3/2)`，缺 `minFeatureMm3` 即 `unverifiable`。不得固定 0.2%。
 
-详细规格：仓库根 `docs/specs/modeling-input-modes.md`（仅仓库内可见，不随产品发布）。
+详细规格：仓库根 `docs/specs/modeling-input-modes.md`（仅仓库内可见）。

@@ -49,7 +49,7 @@ function validatePlan(input = {}) {
   const plane = input.plane || { type: 'XY', offset: 0 }
   if (!PLANES.includes(plane.type)) errors.push(`plane.type must be one of ${PLANES.join(', ')}`)
   if (plane.type === 'construction' && !plane.name) errors.push('construction plane requires name')
-  if (plane.type === 'face' && !finiteTriple(plane.point) && !Array.isArray(plane.face)) errors.push('face plane requires a face point [x,y,z] or face reference')
+  if (plane.type === 'face' && !finiteTriple(plane.point) && !(Array.isArray(plane.face) && plane.face.length > 0)) errors.push('face plane requires a face point [x,y,z] or face reference')
   if (plane.offset !== undefined && (typeof plane.offset !== 'number' || !Number.isFinite(plane.offset))) errors.push('plane.offset must be a finite number')
   const start = input.start === undefined ? [0, 0] : input.start
   if (!finitePair(start)) errors.push('start must be [u, v] with finite numbers')

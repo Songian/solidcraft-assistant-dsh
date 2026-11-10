@@ -35,6 +35,8 @@ G1 参考面 → G2 起点（默认 [0,0]）→ G3 图样/方法 → G4 开口�
 
 每轮开始 `brief read`，用 `focus.goal/stage/current_question` 复述；结束写回 `focus` 的 decisions/open_questions。压缩/新会话从 `brief` 重建，不靠聊天记忆。
 
+“本轮目标”只在建模推进轮强制：改变 `design_mode`/`sketch`/参数/特征/checkpoint，提出或回答建模问题，准备或执行 `batch`/`measure`/`audit`/`preview`。寒暄、纯确认（“好”“继续”）、纯状态查询、与模型无关的标准/材料问答不强制；这些轮次仍读/写 `brief` 锚点。
+
 ## 不变量
 
 1. 任何需要草图的落模必须先过草图协议和 `sketch` 校验；特征驱动不例外。

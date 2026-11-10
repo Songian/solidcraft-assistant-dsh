@@ -44,7 +44,29 @@ function finitePair(value) {
   return Array.isArray(value) && value.length === 2 && value.every((item) => typeof item === 'number' && Number.isFinite(item))
 }
 
-function validatePlan(input = {}) {
+function finitePositive(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+}
+
+const ARG_VALIDATORS = {
+  start: { test: finitePair, expect: '[u, v] with finite numbers' },
+  end: { test: finitePair, expect: '[u, v] with finite numbers' },
+  through: { test: finitePair, expect: '[u, v] with finite numbers' },
+  radius: { test: finitePositive, expect: 'a finite positive number' },
+  length: { test: finitePositive, expect: 'a finite positive number' },
+  angle: { test: (value) => typeof value === 'number' && Number.isFinite(value), expect: 'a finite number' },
+  sweep: { test: (value) => typeof value === 'number' && Number.isFinite(value), expect: 'a finite number' },
+}
+
+function validateArgs(args, errors) {
+  if (!args || typeof args !== 'object' || Array.isArray(args)) return
+  for (const [key, rule] of Object.entries(ARG_VALIDATORS)) {
+    if (args[key] === undefined) continue
+    if (!rule.test(args[key])) errors.push(`args.${key} must be ${rule.expect}`)
+  }
+}
+
+export function validatePlan(input = {}) {
   const errors = []
   const missing = []
   if (!FLOWS.includes(input.flow)) errors.push(`flow must be one of ${FLOWS.join(', ')}`)
@@ -70,6 +92,7 @@ function validatePlan(input = {}) {
       if (input.args?.[key] === undefined) missing.push(`args.${key}`)
     }
   }
+  validateArgs(input.args, errors)
   const ok = errors.length === 0 && missing.length === 0
   return {
     ok,

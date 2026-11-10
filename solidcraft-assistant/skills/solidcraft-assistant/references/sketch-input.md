@@ -2,6 +2,8 @@
 
 从草图开始建模时，先声明 `flow`：`feature-description`（多轮量化）或 `parametric`（直接给参数/图样/方法）。再按顺序确认；**未确认完不执行第一次 `batch`**。
 
+**单草图边界（0.0.1）**：每个设计只支持一个 `sketch` 对象。`brief.sketch` 已存在时，`brief update` 允许用新的单对象覆盖它（修正/替换同一草图），并保留其他字段与 revision 递增；`sketch:null` 清除和 `sketch` 数组都会被明确拒绝，清除只能 `brief reset`。需要第二个草图时停止并说明超出范围，不覆盖第一个。
+
 1. **参考面**：XY（Z=0）、XZ（Y=0 + offset）、YZ（X=0 + offset）、已有构造面、实体平面。
    - XZ 且 Y=15 → `{"type":"XZ","offset":15}`。
    - 构造面用 `name`；实体平面用 `point`/`face`。

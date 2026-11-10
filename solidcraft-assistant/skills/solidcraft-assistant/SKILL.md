@@ -12,7 +12,7 @@ description: Use when the user asks to model, modify, measure, render or export 
    - 新建零件：`mcp__solidcraft__skill_reference {"skill":"solidcraft-modeling"}`。
    - 改现有设计：同一工具用 `{"skill":"solidcraft-editing"}`；装配/运动用 `solidcraft-mechanisms`。
    - 不要凭记忆写命令；不确定的命令用 `list_commands {"filter":"关键词"}` 或 `describe_command`。
-2. `brief init`（已有则 read）；每轮先读 brief 复述 focus 锚点；回复开头写“本轮目标：…”，写入 focus.turn_goal；结束写回 turn_result/next_action；压缩/新会话从 brief 重建。写入目标/标准/需求/参数/checkpoint/产物；没有 brief 不 batch。先判定 design_mode 并写 brief+理由；草图与双入口见 `references/sketch-input.md`、`references/modeling-modes.md`，未通过 `sketch` 校验不 batch。未 verified 标准不得作合规依据。
+2. `brief init`（已有则 read）；每轮先读 brief 复述 focus 锚点；仅建模推进轮在回复开头写“本轮目标：…”并写 focus.turn_goal（非建模轮不强制）；结束写回 turn_result/next_action；压缩/新会话从 brief 重建。写入目标/标准/需求/参数/checkpoint/产物；没有 brief 不 batch。先判定 design_mode 并写 brief+理由；草图与双入口见 `references/sketch-input.md`、`references/modeling-modes.md`，未通过 `sketch` 校验不 batch。
    - 设计里已有内容：先说明现状，未经用户同意不要 `new_design` / `open`（都会丢弃未保存内容）。
 3. 看 note 判断后端：
    - 有桌面应用：用户实时看到建模；headless：看不到。想实时看须在第一次建模前启动应用；已建模后不能中途桥接。
@@ -45,7 +45,7 @@ description: Use when the user asks to model, modify, measure, render or export 
 - 在回复中用 `![说明](绝对路径)` 嵌入截图，文件用 Markdown 链接。
 - 设计保存到 `<工作目录>/designs/<name>.sc`；按需导出 `.step` / `.3mf` / `.stl`。保存/导出/截图都用绝对路径，不要依赖 MCP 服务器的相对路径。
 - 中文回答：先给结论（外形尺寸、体积、关键参数），再给 3–6 步摘要。
-- 计算用 `calc`（单位/量纲），交付前用 `report_check`；未 verified 的标准/材料知识不得写成“符合标准”。
+- 计算用 `calc`（单位/量纲），交付前用 `report_check`；未 verified 标准不得作合规依据，也不得写成“符合标准”。
 
 ## 4. 修改现有设计
 

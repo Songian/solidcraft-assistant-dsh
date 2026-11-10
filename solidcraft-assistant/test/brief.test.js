@@ -19,7 +19,7 @@ const base = {
   design_mode_reason: 'fixed profile',
   design_mode_history: [{ mode: 'geometry-first', reason: 'fixed profile' }],
   revision: 1,
-  sketch: { flow: 'parametric', plane: { type: 'XY' }, start: [0, 0], pattern: 'rectangle', method: 'two_point', closed: true, command: 'sketch.rectangle.two_point' },
+  sketch: { flow: 'parametric', plane: { type: 'XY' }, start: [0, 0], pattern: 'rectangle', method: 'two_point', closed: true, command: 'sketch.rectangle.two_point', args: { end: [120, 50] } },
   requirements: [{ id: 'R1', verify: { tool: 'measure', predicate: 'bbox' } }],
   checkpoints: [{ after: 'base', expected: { volume_mm3: 12000 }, tol: { abs: 1 }, minFeatureMm3: 32.19 }],
   artifacts: { design: 'designs/plate.sc', renders: [] },
@@ -77,6 +77,27 @@ test('audit requires design_mode and a valid sketch', () => {
   const incomplete = auditBrief({ ...plan, sketch: { ...plan.sketch, method: undefined } }, root, { total: { volume_mm3: 12000.5 } })
   assert.equal(incomplete.verdict, 'unverifiable')
   assert.equal(incomplete.gate.sketch, false)
+  rmSync(root, { recursive: true, force: true })
+})
+
+test('audit requires every method arg on the sketch', () => {
+  const root = fixture()
+  const missingEnd = { ...base.sketch, args: {} }
+  const result = auditBrief({ ...base, sketch: missingEnd }, root, { total: { volume_mm3: 12000.5 } })
+  assert.equal(result.verdict, 'unverifiable')
+  assert.equal(result.gate.sketch, false)
+  const withEnd = auditBrief({ ...base, sketch: { ...base.sketch, args: { end: [120, 50] } } }, root, { total: { volume_mm3: 12000.5 } })
+  assert.equal(withEnd.gate.sketch, true)
+  rmSync(root, { recursive: true, force: true })
+})
+
+test('audit rejects a sketch without start (start default is not silently applied)', () => {
+  const root = fixture()
+  const noStart = { ...base.sketch }
+  delete noStart.start
+  const result = auditBrief({ ...base, sketch: noStart }, root, { total: { volume_mm3: 12000.5 } })
+  assert.equal(result.verdict, 'unverifiable')
+  assert.equal(result.gate.sketch, false)
   rmSync(root, { recursive: true, force: true })
 })
 

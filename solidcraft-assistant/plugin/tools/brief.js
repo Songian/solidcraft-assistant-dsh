@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync, realpathSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { validatePlan } from './sketch.js'
 
 export const inject = ['tools', 'workingDirectory']
 
@@ -118,21 +119,34 @@ function measureVolume(measure) {
   return null
 }
 
-function validSketch(sketch) {
-  if (!sketch || typeof sketch !== 'object' || Array.isArray(sketch)) return false
-  if (!['feature-description', 'parametric'].includes(sketch.flow)) return false
-  const plane = sketch.plane
-  if (!plane || !['XY', 'XZ', 'YZ', 'construction', 'face'].includes(plane.type)) return false
-  if (plane.type === 'face') {
-    const point = Array.isArray(plane.point) && plane.point.length === 3 && plane.point.every((n) => typeof n === 'number' && Number.isFinite(n))
-    const face = Array.isArray(plane.face) && plane.face.length > 0
-    if (!point && !face) return false
+// Shared sketch validation: reuse sketch.js so method/args/command stay in sync
+// with the sketch tool. `complete` additionally requires every required args key;
+// both the brief write path and audits require the full sketch object.
+function sketchIssues(sketch, { complete = false } = {}) {
+  if (!sketch || typeof sketch !== 'object' || Array.isArray(sketch)) return ['sketch must be a single object']
+  const plan = validatePlan(sketch)
+  const issues = [...plan.errors]
+  if (!sketch.plane || typeof sketch.plane !== 'object' || Array.isArray(sketch.plane)) {
+    issues.push('plane is required and must be an object')
   }
-  if (!['line', 'circle', 'arc', 'rectangle'].includes(sketch.pattern)) return false
-  if (typeof sketch.method !== 'string' || !sketch.method) return false
-  if (typeof sketch.closed !== 'boolean') return false
-  if (typeof sketch.command !== 'string' || !sketch.command) return false
-  return Array.isArray(sketch.start) && sketch.start.length === 2 && sketch.start.every((n) => typeof n === 'number' && Number.isFinite(n))
+  if (sketch.start === undefined) issues.push('start must be an array of two finite numbers')
+  if (complete && plan.missing.length > 0) issues.push(`missing ${plan.missing.join(', ')}`)
+  if (typeof sketch.closed !== 'boolean') issues.push('closed must be a boolean')
+  if (typeof sketch.command !== 'string' || !sketch.command) {
+    issues.push('command must be a non-empty string')
+  } else if (plan.ok && sketch.command !== plan.plan.command) {
+    issues.push(`command for ${sketch.pattern}/${sketch.method} must be ${plan.plan.command} (got ${sketch.command})`)
+  }
+  return issues
+}
+
+function sketchIssue(sketch, options) {
+  const issues = sketchIssues(sketch, options)
+  return issues.length > 0 ? issues.join('; ') : null
+}
+
+function validSketch(sketch) {
+  return sketchIssue(sketch, { complete: true }) === null
 }
 
 export function auditBrief(data, root, measure, topology, stage = null) {
@@ -255,10 +269,34 @@ export function auditBrief(data, root, measure, topology, stage = null) {
   }
 }
 
+// Closed patterns (circle/rectangle) have no meaningful open/closed choice, so an
+// omitted `closed` is defaulted to true before validation/storage. Explicit values
+// (false, 'false', 0, null, ...) are passed through untouched and rejected by
+// validation instead of being silently rewritten. Other patterns still require an
+// explicit boolean.
+function normalizeSketchClosed(sketch) {
+  if (!sketch || typeof sketch !== 'object' || Array.isArray(sketch)) return sketch
+  if (!['circle', 'rectangle'].includes(sketch.pattern)) return sketch
+  if (sketch.closed !== undefined) return sketch
+  return { ...sketch, closed: true }
+}
+
+function normalizePatch(patch) {
+  if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return patch
+  if (patch.sketch === undefined) return patch
+  return { ...patch, sketch: normalizeSketchClosed(patch.sketch) }
+}
+
 function validatePatch(patch) {
   if (!patch || typeof patch !== 'object' || Array.isArray(patch)) throw new Error('brief update requires a patch object')
   for (const key of Object.keys(patch)) {
+    if (key === 'sketches') throw new Error('brief.sketches is not supported in 0.0.1; write the single sketch object to brief.sketch')
     if (!TOP_KEYS.has(key) || key === 'schema' || key === 'updated') throw new Error(`unknown or immutable brief field: ${key}`)
+    if (key === 'sketch' && Array.isArray(patch[key])) throw new Error('brief.sketch must be a single object, not an array; 0.0.1 supports one sketch per design')
+    if (key === 'sketch' && patch[key] !== null) {
+      const issue = sketchIssue(patch[key], { complete: true })
+      if (issue) throw new Error(`brief.sketch is invalid: ${issue}; write the full single sketch object`)
+    }
     if (key === 'design_mode' && patch[key] !== null && !['feature-first', 'geometry-first'].includes(patch[key])) throw new Error('design_mode must be feature-first, geometry-first, or null')
     if (key === 'design_mode_reason' && patch[key] !== null && typeof patch[key] !== 'string') throw new Error('design_mode_reason must be a string or null')
     if (key === 'design_mode_history' && !Array.isArray(patch[key])) throw new Error('design_mode_history must be an array')
@@ -316,23 +354,32 @@ export function apply(ctx) {
       if (args.op === 'read') return { ok: true, path: file, brief: readBrief(file) }
 
       if (args.op === 'update') {
-        validatePatch(args.patch)
+        const patch = normalizePatch(args.patch)
+        validatePatch(patch)
         const data = readBrief(file)
-        const nextMode = args.patch.design_mode === undefined ? data.design_mode : args.patch.design_mode
-        const nextReason = args.patch.design_mode_reason === undefined ? data.design_mode_reason : args.patch.design_mode_reason
+        const nextMode = patch.design_mode === undefined ? data.design_mode : patch.design_mode
+        const nextReason = patch.design_mode_reason === undefined ? data.design_mode_reason : patch.design_mode_reason
         if (nextMode !== null && (typeof nextReason !== 'string' || nextReason.trim() === '')) {
           throw new Error('design_mode requires design_mode_reason')
         }
+        if (patch.sketch !== undefined) {
+          if (patch.sketch === null && data.sketch !== null && data.sketch !== undefined) {
+            throw new Error(
+              'brief.sketch cannot be cleared with null while a sketch exists; ' +
+              '0.0.1 keeps one sketch per design. Run brief {"op":"reset","confirm":true} to clear it.',
+            )
+          }
+        }
         const next = { ...data }
-        if (args.patch.design_mode_history !== undefined) throw new Error('design_mode_history is managed by the tool')
-        if (args.patch.design_mode && args.patch.design_mode !== data.design_mode) {
+        if (patch.design_mode_history !== undefined) throw new Error('design_mode_history is managed by the tool')
+        if (patch.design_mode && patch.design_mode !== data.design_mode) {
           next.design_mode_history = [
             ...(Array.isArray(data.design_mode_history) ? data.design_mode_history : []),
-            { mode: args.patch.design_mode, reason: args.patch.design_mode_reason ?? null, at: now() },
+            { mode: patch.design_mode, reason: patch.design_mode_reason ?? null, at: now() },
           ]
         }
-        for (const [key, value] of Object.entries(args.patch)) {
-          next[key] = DEEP_KEYS.has(key) ? { ...(data[key] || {}), ...value } : value
+        for (const [key, value] of Object.entries(patch)) {
+          next[key] = key === 'sketch' ? value : DEEP_KEYS.has(key) ? { ...(data[key] || {}), ...value } : value
         }
         const normalized = { ...next, updated: data.updated }
         if (JSON.stringify(normalized) === JSON.stringify(data)) {

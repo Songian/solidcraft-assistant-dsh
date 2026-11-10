@@ -8,6 +8,7 @@ const FILES = [
   '../skills/solidcraft-assistant/references/gui-preview.md',
   '../skills/solidcraft-assistant/references/report-template.md',
   '../skills/solidcraft-assistant/references/sketch-input.md',
+  '../skills/solidcraft-assistant/references/modeling-modes.md',
   '../skills/solidcraft-assistant/references/standards/GB.md',
   '../skills/solidcraft-assistant/references/standards/ISO.md',
 ]

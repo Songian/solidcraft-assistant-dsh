@@ -17,7 +17,7 @@ const KNOWLEDGE_HASH = readHash(['../../knowledge.lock', '../knowledge.lock'])
 const REGISTRY_HASH = readHash(['../../knowledge/constraints/registry.json', '../knowledge/constraints/registry.json'])
 const SKILL_VERSION = '0.0.1'
 const TOP_KEYS = new Set([
-  'schema', 'project', 'revision', 'intent', 'requirements', 'intent_parameters',
+  'schema', 'project', 'design_mode', 'revision', 'intent', 'requirements', 'intent_parameters',
   'checkpoints', 'sketch', 'artifacts', 'standard_refs', 'actual', 'updated',
 ])
 const DEEP_KEYS = new Set(['intent', 'artifacts', 'actual', 'sketch'])
@@ -31,6 +31,7 @@ function defaultBrief(project) {
   return {
     schema: SCHEMA,
     project,
+    design_mode: null,
     revision: 1,
     intent: {
       summary: '',
@@ -221,6 +222,7 @@ function validatePatch(patch) {
   if (!patch || typeof patch !== 'object' || Array.isArray(patch)) throw new Error('brief update requires a patch object')
   for (const key of Object.keys(patch)) {
     if (!TOP_KEYS.has(key) || key === 'schema' || key === 'updated') throw new Error(`unknown or immutable brief field: ${key}`)
+    if (key === 'design_mode' && patch[key] !== null && !['feature-first', 'geometry-first'].includes(patch[key])) throw new Error('design_mode must be feature-first, geometry-first, or null')
     if (ARRAY_KEYS.has(key) && !Array.isArray(patch[key])) throw new Error(`${key} must be an array`)
     if (DEEP_KEYS.has(key) && patch[key] !== null && (typeof patch[key] !== 'object' || Array.isArray(patch[key]))) {
       throw new Error(`${key} must be an object`)

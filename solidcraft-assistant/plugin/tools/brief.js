@@ -18,9 +18,9 @@ const REGISTRY_HASH = readHash(['../../knowledge/constraints/registry.json', '..
 const SKILL_VERSION = '0.0.1'
 const TOP_KEYS = new Set([
   'schema', 'project', 'design_mode', 'design_mode_reason', 'revision', 'intent', 'requirements', 'intent_parameters',
-  'checkpoints', 'sketch', 'artifacts', 'standard_refs', 'actual', 'updated',
+  'checkpoints', 'sketch', 'focus', 'artifacts', 'standard_refs', 'actual', 'updated',
 ])
-const DEEP_KEYS = new Set(['intent', 'artifacts', 'actual', 'sketch'])
+const DEEP_KEYS = new Set(['intent', 'artifacts', 'actual', 'sketch', 'focus'])
 const ARRAY_KEYS = new Set(['requirements', 'intent_parameters', 'checkpoints', 'standard_refs'])
 
 function now() {
@@ -48,6 +48,14 @@ function defaultBrief(project) {
     intent_parameters: [],
     checkpoints: [],
     sketch: null,
+    focus: {
+      goal: '',
+      stage: 'intake',
+      current_question: '',
+      decisions: [],
+      open_questions: [],
+      last_anchor: null,
+    },
     artifacts: { design: '', renders: [] },
     standard_refs: [],
     actual: null,
@@ -252,6 +260,7 @@ function validatePatch(patch) {
     if (key === 'design_mode_reason' && patch[key] !== null && typeof patch[key] !== 'string') throw new Error('design_mode_reason must be a string or null')
     if (key === 'design_mode_history' && !Array.isArray(patch[key])) throw new Error('design_mode_history must be an array')
     if (ARRAY_KEYS.has(key) && !Array.isArray(patch[key])) throw new Error(`${key} must be an array`)
+    if (key === 'focus' && patch[key] !== null && (typeof patch[key] !== 'object' || Array.isArray(patch[key]))) throw new Error('focus must be an object or null')
     if (DEEP_KEYS.has(key) && patch[key] !== null && (typeof patch[key] !== 'object' || Array.isArray(patch[key]))) {
       throw new Error(`${key} must be an object`)
     }

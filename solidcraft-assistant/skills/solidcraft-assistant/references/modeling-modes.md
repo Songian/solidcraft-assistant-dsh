@@ -31,6 +31,10 @@ G1 参考面 → G2 起点（默认 [0,0]）→ G3 图样/方法 → G4 开口�
 
 参考面语法：`XY Z=offset`、`XZ Y=offset`、`YZ X=offset`；offset 单位 mm、默认 0、沿面法向正方向。构造面 offset 沿其法向；实体面取支撑面，显式 offset 不一致时须确认。
 
+## 抗失焦/抗失忆
+
+每轮开始 `brief read`，用 `focus.goal/stage/current_question` 复述；结束写回 `focus` 的 decisions/open_questions。压缩/新会话从 `brief` 重建，不靠聊天记忆。
+
 ## 不变量
 
 1. 任何需要草图的落模必须先过草图协议和 `sketch` 校验；特征驱动不例外。

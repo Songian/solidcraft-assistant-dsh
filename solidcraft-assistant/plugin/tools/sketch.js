@@ -35,6 +35,10 @@ const PATTERNS = {
   },
 }
 
+function finiteTriple(value) {
+  return Array.isArray(value) && value.length === 3 && value.every((item) => typeof item === 'number' && Number.isFinite(item))
+}
+
 function finitePair(value) {
   return Array.isArray(value) && value.length === 2 && value.every((item) => typeof item === 'number' && Number.isFinite(item))
 }
@@ -45,7 +49,7 @@ function validatePlan(input = {}) {
   const plane = input.plane || { type: 'XY', offset: 0 }
   if (!PLANES.includes(plane.type)) errors.push(`plane.type must be one of ${PLANES.join(', ')}`)
   if (plane.type === 'construction' && !plane.name) errors.push('construction plane requires name')
-  if (plane.type === 'face' && !finitePair(plane.point) && !Array.isArray(plane.face)) errors.push('face plane requires a face point [x,y,z]')
+  if (plane.type === 'face' && !finiteTriple(plane.point) && !Array.isArray(plane.face)) errors.push('face plane requires a face point [x,y,z] or face reference')
   if (plane.offset !== undefined && (typeof plane.offset !== 'number' || !Number.isFinite(plane.offset))) errors.push('plane.offset must be a finite number')
   const start = input.start === undefined ? [0, 0] : input.start
   if (!finitePair(start)) errors.push('start must be [u, v] with finite numbers')
@@ -71,7 +75,7 @@ function validatePlan(input = {}) {
     missing,
     next: missing[0] || null,
     plan: ok ? {
-      plane: { type: plane.type, offset: plane.offset ?? 0, ...(plane.name ? { name: plane.name } : {}), ...(plane.point ? { point: plane.point } : {}) },
+      plane: { type: plane.type, offset: plane.offset ?? 0, ...(plane.name ? { name: plane.name } : {}), ...(plane.point ? { point: plane.point } : {}), ...(plane.face ? { face: plane.face } : {}) },
       start,
       pattern: input.pattern,
       method: input.method,

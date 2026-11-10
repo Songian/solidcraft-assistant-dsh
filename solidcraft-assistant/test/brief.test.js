@@ -15,7 +15,11 @@ function fixture() {
 const base = {
   schema: 'solidcraft-brief/2',
   project: 'p',
+  design_mode: 'geometry-first',
+  design_mode_reason: 'fixed profile',
+  design_mode_history: [{ mode: 'geometry-first', reason: 'fixed profile' }],
   revision: 1,
+  sketch: { plane: { type: 'XY' }, start: [0, 0], pattern: 'rectangle', method: 'two_point', closed: true, command: 'sketch.rectangle.two_point' },
   requirements: [{ id: 'R1', verify: { tool: 'measure', predicate: 'bbox' } }],
   checkpoints: [{ after: 'base', expected: { volume_mm3: 12000 }, tol: { abs: 1 }, minFeatureMm3: 32.19 }],
   artifacts: { design: 'designs/plate.sc', renders: [] },
@@ -55,5 +59,26 @@ test('invalid artifact types are errors, not crashes', () => {
   const result = auditBrief({ ...base, artifacts: { design: 123, renders: [{}] } }, root, { total: { volume_mm3: 12000 } })
   assert.equal(result.ok, false)
   assert.equal(result.paths.every((item) => item.status === 'invalid'), true)
+  rmSync(root, { recursive: true, force: true })
+})
+
+test('audit requires design_mode and a valid sketch', () => {
+  const root = fixture()
+  writeFileSync(join(root, 'renders'), '')
+  const plan = { ...base, artifacts: { design: 'designs/plate.sc', renders: [] } }
+  const missing = auditBrief({ ...plan, design_mode: null, sketch: null }, root, { total: { volume_mm3: 12000.5 } })
+  assert.equal(missing.verdict, 'unverifiable')
+  assert.equal(missing.gate.designMode, false)
+  assert.equal(missing.gate.sketch, false)
+  const incomplete = auditBrief({ ...plan, sketch: { plane: { type: 'XY' }, pattern: 'line' } }, root, { total: { volume_mm3: 12000.5 } })
+  assert.equal(incomplete.verdict, 'unverifiable')
+  rmSync(root, { recursive: true, force: true })
+})
+
+test('declared relative tolerance alone is unverifiable', () => {
+  const root = fixture()
+  const result = auditBrief({ ...base, checkpoints: [{ after: 'base', expected: { volume_mm3: 12000 }, tol: { rel: 0.5 } }] }, root, { total: { volume_mm3: 12000.5 } })
+  assert.equal(result.volume.status, 'unverifiable')
+  assert.equal(result.verdict, 'unverifiable')
   rmSync(root, { recursive: true, force: true })
 })

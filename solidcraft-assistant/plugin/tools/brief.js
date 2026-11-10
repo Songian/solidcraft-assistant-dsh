@@ -17,11 +17,11 @@ const KNOWLEDGE_HASH = readHash(['../../knowledge.lock', '../knowledge.lock'])
 const REGISTRY_HASH = readHash(['../../knowledge/constraints/registry.json', '../knowledge/constraints/registry.json'])
 const SKILL_VERSION = '0.0.1'
 const TOP_KEYS = new Set([
-  'schema', 'project', 'design_mode', 'revision', 'intent', 'requirements', 'intent_parameters',
+  'schema', 'project', 'design_mode', 'design_mode_reason', 'design_mode_history', 'revision', 'intent', 'requirements', 'intent_parameters',
   'checkpoints', 'sketch', 'artifacts', 'standard_refs', 'actual', 'updated',
 ])
 const DEEP_KEYS = new Set(['intent', 'artifacts', 'actual', 'sketch'])
-const ARRAY_KEYS = new Set(['requirements', 'intent_parameters', 'checkpoints', 'standard_refs'])
+const ARRAY_KEYS = new Set(['requirements', 'intent_parameters', 'checkpoints', 'standard_refs', 'design_mode_history'])
 
 function now() {
   return new Date().toISOString()
@@ -32,6 +32,8 @@ function defaultBrief(project) {
     schema: SCHEMA,
     project,
     design_mode: null,
+    design_mode_reason: null,
+    design_mode_history: [],
     revision: 1,
     intent: {
       summary: '',
@@ -103,6 +105,18 @@ function measureVolume(measure) {
   return null
 }
 
+function validSketch(sketch) {
+  if (!sketch || typeof sketch !== 'object' || Array.isArray(sketch)) return false
+  const plane = sketch.plane
+  if (!plane || !['XY', 'XZ', 'YZ', 'construction', 'face'].includes(plane.type)) return false
+  if (plane.type === 'face' && !Array.isArray(plane.point) && !Array.isArray(plane.face)) return false
+  if (!['line', 'circle', 'arc', 'rectangle'].includes(sketch.pattern)) return false
+  if (typeof sketch.method !== 'string' || !sketch.method) return false
+  if (typeof sketch.closed !== 'boolean') return false
+  if (typeof sketch.command !== 'string' || !sketch.command) return false
+  return Array.isArray(sketch.start) && sketch.start.length === 2 && sketch.start.every((n) => typeof n === 'number' && Number.isFinite(n))
+}
+
 export function auditBrief(data, root, measure, topology, stage = null) {
   const errors = []
   const warnings = []
@@ -144,14 +158,12 @@ export function auditBrief(data, root, measure, topology, stage = null) {
     } else {
       warnings.push('checkpoint missing minFeatureMm3; tolerance cannot be bounded')
     }
-    let pass = null
-    if (allowedAbs !== null) pass = abs <= allowedAbs
-    else if (declaredRel !== null) pass = rel !== null && rel <= declaredRel
+    const pass = allowedAbs === null ? null : abs <= allowedAbs
     volume = {
       status: pass === null ? 'unverifiable' : pass ? 'pass' : 'fail',
       expected, measured, abs, rel,
       tol,
-      tolResolved: allowedAbs !== null ? { abs: allowedAbs, rel: allowedRel, source: 'minFeature/2' } : declaredRel !== null ? { rel: declaredRel, source: 'declared' } : null,
+      tolResolved: allowedAbs !== null ? { abs: allowedAbs, rel: allowedRel, source: 'minFeature/2' } : null,
       checkpoint: checkpoint.after || null,
     }
     if (pass === false) errors.push(`volume outside tolerance: measured ${measured}, expected ${expected}`)
@@ -194,12 +206,18 @@ export function auditBrief(data, root, measure, topology, stage = null) {
     topo = { bodies: bodies.length, cylinders }
   }
 
+  const designMode = ['feature-first', 'geometry-first'].includes(data.design_mode)
+  const sketch = validSketch(data.sketch)
+  if (!designMode) warnings.push('design_mode is not set (feature-first or geometry-first)')
+  if (!sketch) warnings.push('sketch plan is missing or incomplete; run sketch validate and write brief.sketch')
   const gate = {
+    designMode,
+    sketch,
     requirements: mapped.length > 0,
     checkpoint: checkpoint != null,
     volume: volume.status === 'pass',
     artifacts: paths.length > 0 && paths.every((item) => item.status === 'exists'),
-    passed: mapped.length > 0 && volume.status === 'pass' && paths.length > 0 && paths.every((item) => item.status === 'exists') && errors.length === 0,
+    passed: designMode && sketch && mapped.length > 0 && volume.status === 'pass' && paths.length > 0 && paths.every((item) => item.status === 'exists') && errors.length === 0,
   }
 
   const verdict = gate.passed ? 'verified' : (errors.length > 0 ? 'failed' : 'unverifiable')
@@ -223,6 +241,8 @@ function validatePatch(patch) {
   for (const key of Object.keys(patch)) {
     if (!TOP_KEYS.has(key) || key === 'schema' || key === 'updated') throw new Error(`unknown or immutable brief field: ${key}`)
     if (key === 'design_mode' && patch[key] !== null && !['feature-first', 'geometry-first'].includes(patch[key])) throw new Error('design_mode must be feature-first, geometry-first, or null')
+    if (key === 'design_mode_reason' && patch[key] !== null && typeof patch[key] !== 'string') throw new Error('design_mode_reason must be a string or null')
+    if (key === 'design_mode_history' && !Array.isArray(patch[key])) throw new Error('design_mode_history must be an array')
     if (ARRAY_KEYS.has(key) && !Array.isArray(patch[key])) throw new Error(`${key} must be an array`)
     if (DEEP_KEYS.has(key) && patch[key] !== null && (typeof patch[key] !== 'object' || Array.isArray(patch[key]))) {
       throw new Error(`${key} must be an object`)
@@ -279,6 +299,12 @@ export function apply(ctx) {
         validatePatch(args.patch)
         const data = readBrief(file)
         const next = { ...data }
+        if (args.patch.design_mode && args.patch.design_mode !== data.design_mode) {
+          next.design_mode_history = [
+            ...(Array.isArray(data.design_mode_history) ? data.design_mode_history : []),
+            { mode: args.patch.design_mode, reason: args.patch.design_mode_reason ?? null, at: now() },
+          ]
+        }
         for (const [key, value] of Object.entries(args.patch)) {
           next[key] = DEEP_KEYS.has(key) ? { ...(data[key] || {}), ...value } : value
         }

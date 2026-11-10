@@ -9,4 +9,4 @@
 - 工作区：新建任务选择项目目录；session-aware MCP bridge 按会话目录启动 `solidcraft-cli mcp --allow-path`，不再需要 `SOLIDCRAFT_WORKSPACE`。
 - GUI 预览：`preview` 工具，同一模型更新原 tab，不重启实例，路径限制在项目根。
 - 测试：17 个 `node:test` 用例（工具、知识、lock、路径/符号链接）。
-- Tarball SHA-256: `75fbd79b297c8be8834cd84a239930632eead1cb9b6d3ff058775bce596eed69`；tarball `local-solidcraft-assistant-0.0.1.tgz`，20 files。
+- Tarball SHA-256: `1bf1eb9c6436c56d670e3efd74209240084e17bb14db5b4cb677587fb3ac5dd1`；tarball `local-solidcraft-assistant-0.0.1.tgz`，20 files。
